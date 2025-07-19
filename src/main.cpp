@@ -1,15 +1,24 @@
 #include <Arduino.h>
+#include <LCDscreen.h>
 
-#include <Wire.h>
-#include <LiquidCrystal_I2C.h>
-
-LiquidCrystal_I2C lcd(0x27, 16, 2);
+LCDScreen screen;
 
 void setup() {
-  lcd.init();
-  lcd.backlight(); // Asegura iluminación
-  lcd.setCursor(0, 0);
-  lcd.print("Prueba LCD");
+    screen.begin();
+    screen.printCentered(0, "Test de LCD");
+    
+    delay(2000);  // Esperamos 2 segundos
+
+    screen.startScrolling(1, "Este mensaje es demasiado largo para una sola línea", 300);
 }
 
-void loop() {}
+void loop() {
+    screen.updateScrolling();
+
+    // Detenemos el scroll después de 10 segundos
+    static unsigned long startTime = millis();
+    if (millis() - startTime > 10000 && screen.isScrolling()) {
+        screen.stopScrolling();
+        screen.printLine(1, "Scroll detenido");
+    }
+}

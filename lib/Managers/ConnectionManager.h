@@ -1,5 +1,11 @@
 #pragma once
 
+/*
+    Esta clase permite unificar la estructura minima en la que las diferentes
+    conexiones (WiFi, MQTT, BlueTooth...) se deberían de definir para
+    un buen control de fallos y reintentos.
+*/
+
 class ConnectionManager{
     protected:
         // Parametros para control de reintentos y no bloqueo:
