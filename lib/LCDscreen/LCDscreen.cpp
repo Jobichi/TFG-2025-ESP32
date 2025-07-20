@@ -13,14 +13,25 @@ void LCDScreen::begin() {
 
 // Método para escribir una línea.
 void LCDScreen::printLine(int line, const String &message) {
+    String padded = message;
+    int padding = _cols - padded.length();
+
+    if (padding > 0) {
+        for (int i = 0; i < padding; ++i) {
+            padded += ' ';
+        }
+    } else if (padding < 0) {
+        padded = padded.substring(0, _cols);
+    }
+
     _lcd.setCursor(0, line);
-    _lcd.print(String(" ", _cols)); // Limpia línea
-    _lcd.setCursor(0, line);
-    _lcd.print(message);
+    _lcd.print(padded);
 }
+
 
 // Método para centrar el mensaje.
 void LCDScreen::printCentered(int line, const String &message) {
+    printLine(line, ""); // Limpia línea
     int padding = (_cols - message.length()) / 2;
     _lcd.setCursor(padding > 0 ? padding : 0, line);
     _lcd.print(message);
@@ -35,7 +46,8 @@ void LCDScreen::startScrolling(int line, const String &message, int delayMs){
         return;
     }
 
-    _scrollMessage = "                " + message + "                ";
+    String padding(_cols, ' ');
+    _scrollMessage = padding + message + padding;
     _scrollLine = line;
     _scrollDelay = delayMs;
     _scrollIndex = 0;
