@@ -1,24 +1,16 @@
 #include <Arduino.h>
-#include <LCDscreen.h>
-
-LCDScreen screen;
+#include <WifiScanner.h>
 
 void setup() {
-    screen.begin();
-    screen.printCentered(0, "Test de LCD");
-    
-    delay(2000);  // Esperamos 2 segundos
+    Serial.begin(115200);
+    delay(1000);
+    WiFi.mode(WIFI_STA);
+    WiFi.disconnect();  // Importante para escaneo
+    delay(100);
 
-    screen.startScrolling(1, "Este mensaje es demasiado largo para una sola línea", 300);
+    WifiScanner::printNetworks();
 }
 
 void loop() {
-    screen.updateScrolling();
-
-    // Detenemos el scroll después de 10 segundos
-    static unsigned long startTime = millis();
-    if (millis() - startTime > 10000 && screen.isScrolling()) {
-        screen.stopScrolling();
-        screen.printLine(1, "Scroll detenido");
-    }
+   
 }

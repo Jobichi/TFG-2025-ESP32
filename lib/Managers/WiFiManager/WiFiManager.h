@@ -11,11 +11,11 @@
 
 class WifiManager : ConnectionManager{
     private:
-        const char *ssid;
-        const char *password;
+        const char *_ssid;
+        const char *_password;
         
         // Definimos el led para comprobar de manera visual el estado del WiFi
-        int ledPin; 
+        int _ledPin; 
 
     public:
         // Constructor para la clase WifiManager:
@@ -25,5 +25,5 @@ class WifiManager : ConnectionManager{
         // Sobreescribimos las difiniciones de la clase padre:
         void connect() override;
         void checkConnection() override;
-        void isConnected() override;
+        bool isConnected() override;
 };

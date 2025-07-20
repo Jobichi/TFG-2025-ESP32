@@ -1,73 +1,90 @@
 #include <LCDscreen.h>
 
+// Constructor para definir los parámetros de la pantalla.
 LCDScreen::LCDScreen(uint8_t address, int cols, int rows)
-    : lcd(address, cols, rows), cols(cols), rows(rows) {}
+    : _lcd(address, cols, rows), _cols(cols), _rows(rows) {}
 
+// Método para inicializar pantalla.
 void LCDScreen::begin() {
-    lcd.init();
-    lcd.backlight();
-    lcd.clear();
+    _lcd.init();
+    _lcd.backlight();
+    _lcd.clear();
 }
 
+// Método para escribir una línea.
 void LCDScreen::printLine(int line, const String &message) {
-    lcd.setCursor(0, line);
-    lcd.print("                "); // Limpia línea
-    lcd.setCursor(0, line);
-    lcd.print(message);
+    _lcd.setCursor(0, line);
+    _lcd.print(String(" ", _cols)); // Limpia línea
+    _lcd.setCursor(0, line);
+    _lcd.print(message);
 }
 
+// Método para centrar el mensaje.
+void LCDScreen::printCentered(int line, const String &message) {
+    int padding = (_cols - message.length()) / 2;
+    _lcd.setCursor(padding > 0 ? padding : 0, line);
+    _lcd.print(message);
+}
+
+// Método para iniciar el scrolling de un mansaje.
 void LCDScreen::startScrolling(int line, const String &message, int delayMs){
     // Comprobamos primero si el mensaje entra en la misma línea sin scroll:
-    if(message.length() <= cols){
+    if(message.length() <= _cols){
         printLine(line, message);
-        scrollingActive = false;
+        _scrollingActive = false;
         return;
     }
-    scrollMessage = message + "                ";
-    scrollLine = line;
-    scrollDelay = delayMs;
-    scrollIndex = 0;
-    scrollingActive = true;
-    lastScrollTime = millis();
+
+    _scrollMessage = "                " + message + "                ";
+    _scrollLine = line;
+    _scrollDelay = delayMs;
+    _scrollIndex = 0;
+    _scrollingActive = true;
+    _lastScrollTime = millis();
+    _scrollStartTime = _lastScrollTime;
+
+    // Calculamos el tiempo de duración minimo para el scroll:
+    _minScrollDuration = _scrollMessage.length() * delayMs;
 }
 
+// Método para actualizar el scroll del mensaje.
 void LCDScreen::updateScrolling() {
-    if (!scrollingActive) return;
+    if (!_scrollingActive) 
+        return;
 
     unsigned long now = millis();
 
-    if (now - lastScrollTime >= scrollDelay) {
+    if (now - _lastScrollTime >= _scrollDelay) {
         // Comprobamos si ya hemos mostrado todo el mensaje + espacio vacío
-        if (scrollIndex > scrollMessage.length()) {
-            scrollingActive = false;
-            lcd.setCursor(0, scrollLine);
-            lcd.print(String(" ", cols));  // Limpia la línea tras terminar
+        if (_scrollIndex + _cols > _scrollMessage.length()) {
+            _scrollingActive = false;
+            _lcd.setCursor(0, _scrollLine);
+            _lcd.print(String(" ", _cols));  // Limpia la línea tras terminar
             return;
         }
 
         // Mostrar la subcadena desplazada
-        lcd.setCursor(0, scrollLine);
-        lcd.print(scrollMessage.substring(scrollIndex, scrollIndex + cols));
-        scrollIndex++;
-        lastScrollTime = now;
+        _lcd.setCursor(0, _scrollLine);
+        _lcd.print(_scrollMessage.substring(_scrollIndex, _scrollIndex + _cols));
+        _scrollIndex++;
+        _lastScrollTime = now;
     }
 }
 
-
+// Método para parar el scroll del mensaje.
 void LCDScreen::stopScrolling(){
-    scrollingActive = false;
-    lcd.setCursor(0, scrollLine);
-    lcd.print(String(" ", cols));
+    // Comprobamos de que no esté parado con anterioridad:
+    if(!_scrollingActive)
+        return;
+
+    _scrollingActive = false;
+    _lcd.setCursor(0, _scrollLine);
+    _lcd.print(String(" ", _cols));
 }
 
-void LCDScreen::printCentered(int line, const String &message) {
-    int padding = (cols - message.length()) / 2;
-    lcd.setCursor(padding > 0 ? padding : 0, line);
-    lcd.print(message);
-}
-
+// Método para limpiar la pantalla LCD.
 void LCDScreen::clear() {
-    lcd.clear();
+    _lcd.clear();
 }
 
 

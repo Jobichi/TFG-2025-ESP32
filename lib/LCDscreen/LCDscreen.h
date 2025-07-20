@@ -12,15 +12,19 @@
 
 class LCDScreen {
     private:
-        LiquidCrystal_I2C lcd;
-        int cols;
-        int rows;
-        bool scrollingActive = false;
-        unsigned long lastScrollTime = 0;
-        int scrollIndex = 0;
-        String scrollMessage;
-        int scrollLine = 0;  // Primera línea por defecto para los mensajes
-        int scrollDelay = 300;
+        LiquidCrystal_I2C _lcd;
+        int _cols;
+        int _rows;
+
+        // Parametros para el scroll del mensaje.
+        bool _scrollingActive = false;
+        unsigned long _lastScrollTime = 0;
+        unsigned long _scrollStartTime = 0;
+        unsigned long _minScrollDuration = 0;
+        int _scrollIndex = 0;
+        String _scrollMessage;
+        int _scrollLine = 0;  // Primera línea por defecto para los mensajes
+        int _scrollDelay = 300;
 
     public:
         // Constructor - Inicializado por defecto para nuestra pantalla.
@@ -36,7 +40,7 @@ class LCDScreen {
         void startScrolling(int line, const String &message, int delay = 300);
         void stopScrolling();
         void updateScrolling();
-        bool isScrolling() const { return scrollingActive; }
+        bool isScrolling() const { return _scrollingActive; }
 
         // Limpia la pantalla
         void clear();
