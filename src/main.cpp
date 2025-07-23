@@ -1,46 +1,35 @@
 #include <Arduino.h>
-#include <WifiScanner.h>
+#include <WiFiManager/WiFiManager.h>
 #include <LCDscreen.h>
 
 LCDScreen lcd;
+WifiManager wifi("R-73", "20924273", 2, 30000, 3, &lcd);  // LED en pin 2, pantalla incluida
+
+const int ledPinD4 = 4;
+const int buttonPinD5 = 5;
+bool ledState = false;
+bool lastButtonState = HIGH;
 
 void setup() {
     Serial.begin(115200);
+    pinMode(buttonPinD5, INPUT_PULLDOWN);
+    pinMode(ledPinD4, OUTPUT);
+    digitalWrite(ledPinD4, ledState);
     lcd.begin();
-    lcd.printCentered(0, "Buscando redes");
-    delay(1500);
-
-    auto redes = WifiScanner::scanNetworks();
-
-    if (redes.empty()) {
-        lcd.printCentered(0, "Sin redes");
-        return;
-    }
-
-    for (const auto& net : redes) {
-        lcd.clear();
-
-        String ssidLine = net.ssid;
-        if (ssidLine.length() > 16) {
-            lcd.startScrolling(0, ssidLine);
-        } else {
-            lcd.printLine(0, ssidLine);
-        }
-
-        String info = String("RSSI: ") + net.rssi + String("dBm");
-
-        lcd.printLine(1, info);
-
-        unsigned long startTime = millis();
-        while (millis() - startTime < 5000) {  // 3 segundos por red
-            lcd.updateScrolling();
-            delay(100);  // refresco del scroll
-        }
-
-        lcd.stopScrolling();
-    }
+    wifi.connect();  // Ya muestra estado en la pantalla
 }
 
 void loop() {
-    // No hacemos nada más aquí de momento
+    lcd.updateScrolling();
+    wifi.checkConnection();  // Reconecta si se cae, mostrando estado
+    
+    bool buttonState = digitalRead(buttonPinD5);
+    if(buttonState == LOW && lastButtonState == HIGH){
+        ledState = !ledState;
+        digitalWrite(ledPinD4, ledState);
+        Serial.println(ledState ? "LED encendido" : "LED apagado");
+        delay(10);
+    }
+
+    lastButtonState = buttonState;
 }
