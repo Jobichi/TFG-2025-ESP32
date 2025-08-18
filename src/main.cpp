@@ -1,35 +1,37 @@
-#include <Arduino.h>
-#include <WiFiManager/WiFiManager.h>
-#include <LCDscreen.h>
+#include "networks/WiFiManager.hpp"
 
-LCDScreen lcd;
-WifiManager wifi("R-73", "20924273", 2, 30000, 3, &lcd);  // LED en pin 2, pantalla incluida
-
-const int ledPinD4 = 4;
-const int buttonPinD5 = 5;
-bool ledState = false;
-bool lastButtonState = HIGH;
-
+// Config inicial (DHCP o IP fija)
+NetworkConfig cfg;
 void setup() {
-    Serial.begin(115200);
-    pinMode(buttonPinD5, INPUT_PULLDOWN);
-    pinMode(ledPinD4, OUTPUT);
-    digitalWrite(ledPinD4, ledState);
-    lcd.begin();
-    wifi.connect();  // Ya muestra estado en la pantalla
+  Serial.begin(115200);
+
+  cfg.ssid = "TuSSID";
+  cfg.password = "TuPass";
+  cfg.isDHCP = true;             // o false y rellenas staticIP/gateway/subnet
+  cfg.hostname = "mi-dispositivo";
+  cfg.mdnsEnabled = true;
+
+  static WiFiManager wifi(cfg);
+  wifi.setConnectTimeoutMs(10000);
+  wifi.setBackoffBaseMs(1000);
+  wifi.setBackoffMaxMs(30000);
+
+  wifi.begin();                  // aplica config y lanza primer intento
+
+  // Guarda una referencia global/estática si lo necesitas en loop()
 }
 
 void loop() {
-    lcd.updateScrolling();
-    wifi.checkConnection();  // Reconecta si se cae, mostrando estado
-    
-    bool buttonState = digitalRead(buttonPinD5);
-    if(buttonState == LOW && lastButtonState == HIGH){
-        ledState = !ledState;
-        digitalWrite(ledPinD4, ledState);
-        Serial.println(ledState ? "LED encendido" : "LED apagado");
-        delay(10);
-    }
+  // asume acceso a 'wifi' (global/estático o vía singleton)
+  extern WiFiManager wifi;
 
-    lastButtonState = buttonState;
+  wifi.tick();                   // gestiona FSM y reintentos
+
+  if (wifi.isConnected()) {
+    // Trabajo con conectividad
+  } else {
+    // Trabajo sin conectividad
+  }
+
+  // No uses delays largos; loop debe ser fluido
 }
