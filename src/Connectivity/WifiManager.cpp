@@ -1,4 +1,4 @@
-#include "Managers/WifiManager.h"
+#include "Connectivity/WifiManager.h"
 #include "configCredentials.h"
 
 unsigned long lastReconnectAttempt = 0;
@@ -32,7 +32,6 @@ void setupWifi(){
         #if DEBUG
             Serial.println("\n[WiFi] No se pudo conectar en setup. Reintentos en loop.");
         #endif
-        Serial.println("\n[WiFi] No se pudo conectar en setup. Reintentos en loop.");
     }
 
     
@@ -58,10 +57,12 @@ void handleWifi() {
                 Serial.printf("[WiFi] No reconectado todavía. Tiempo: %lu\n", now);
             #endif
         }
-    } else if(now - forDebug > 60000){
-        forDebug = now;
+    } else {
         #if DEBUG
-            Serial.println("[WiFi] OK.");
+            if(now - forDebug > 60000){
+                forDebug = now;
+                Serial.println("[WiFi] OK.");
+            }
         #endif
     }
 }
