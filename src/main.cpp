@@ -4,11 +4,11 @@
 #include "Connectivity/WifiManager.h"
 #include "Screens/OledManager.h"
 
-// === Sensor BMP280 ===
-#include "Sensors/Bmp280Sensor.h"
+// === MQ-2 Sensor ===
+#include "Sensors/MqSensor.h"
 
-// Instancia del BMP280 (dirección I2C, periodo de lectura, nombre)
-Bmp280Sensor bmp(0x76, 2000, "BMP280");
+// Pin 34, muestreo cada 1s, umbral = 1.0 V
+MqSensor mq(34, 1000, 1.0, "MQ-2");
 
 void setup() {
     Serial.begin(115200);
@@ -16,38 +16,44 @@ void setup() {
     // WiFi y OLED
     setupWifi();
     setupOLED();
-    oledSetTopText("ESP32 listo", 1);
+    oledSetTopText("ESP32 + MQ-2", 1);
 
     // Inicializar sensor
-    bmp.begin();
+    mq.begin();
 }
 
 void loop() {
     handleWifi();
     oledHandle();
 
-    // Actualizar lecturas del sensor
-    bmp.loop();
+    // Actualizar MQ-2
+    mq.loop();
 
-    // Mostrar estado cada 2s
+    // Mostrar cada 1s
     static unsigned long lastPrint = 0;
-    if (millis() - lastPrint > 2000) {
+    if (millis() - lastPrint > 1000) {
         lastPrint = millis();
 
-        if (!bmp.isHealthy()) {
-            oledSetBottomText("Lectura fallida", 1);
-            Serial.println("[BMP280] Error de lectura");
+        float volt = mq.lastVoltage();
+        int raw = mq.lastRaw();
+
+        // Serial
+        Serial.printf("[%s] Raw=%d, Volt=%.2f V",
+                      mq.name(), raw, volt);
+        if (mq.triggered()) {
+            Serial.print(" [TRIGGERED]");
+        }
+        Serial.println();
+
+        // OLED
+        String topLine = "V: " + String(volt, 2) + " V";
+        oledSetTopText(topLine, 2);
+
+        if (mq.triggered()) {
+            oledSetBottomText("GAS DETECTADO", 1);
         } else {
-            String topLine = "T: " + String(bmp.lastTemperatureC(), 1) + " C";
-            String bottomLine = "P:" + String(bmp.lastPressure(), 0) + " hPa";
-
-            oledSetTopText(topLine, 2);
+            String bottomLine = "ADC: " + String(raw);
             oledSetBottomText(bottomLine, 1);
-
-            Serial.printf("[%s] T=%.2f C, P=%.2f hPa\n",
-                          bmp.name(),
-                          bmp.lastTemperatureC(),
-                          bmp.lastPressure());
         }
     }
 }
