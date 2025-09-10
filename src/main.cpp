@@ -1,44 +1,40 @@
 #include <Arduino.h>
-#include "configCredentials.h"
+#include "Screens/LcdManager.h"
 
-#include "Connectivity/WifiManager.h"
-#include "Screens/OledManager.h"
-
-// === Pin del relé ===
-const int RELAY_PIN = 5;   // usa un pin digital libre (ej. GPIO4)
-
-// ⚠️ Nota: algunos módulos de relé se activan con LOW en lugar de HIGH
-// Ajusta ACTIVE_STATE a HIGH o LOW según tu módulo
-const int ACTIVE_STATE = HIGH;
+unsigned long lastChange = 0;
+const unsigned long changeInterval = 16000; // cambiar mensaje cada 8s
+int messageIndex = 0;
 
 void setup() {
     Serial.begin(115200);
-
-    setupWifi();
-    setupOLED();
-    oledSetTopText("ESP32 + Relay", 1);
-
-    pinMode(RELAY_PIN, OUTPUT);
-    digitalWrite(RELAY_PIN, !ACTIVE_STATE); // empezar apagado
+    setupLCD();
+    lcdPrint("Inicializando...", "LCD Manager");
 }
 
 void loop() {
-    handleWifi();
-    oledHandle();
+    lcdHandle(); // 👉 refresca el scroll hardware si está activo
 
-    static unsigned long lastToggle = 0;
-    static bool state = false;
+    unsigned long now = millis();
+    if (now - lastChange >= changeInterval) {
+        lastChange = now;
 
-    if (millis() - lastToggle > 2000) {  // cambiar cada 2s
-        lastToggle = millis();
-        state = !state;
-
-        if (state) {
-            digitalWrite(RELAY_PIN, ACTIVE_STATE);
-            oledSetBottomText("Relay ON", 1);
-        } else {
-            digitalWrite(RELAY_PIN, !ACTIVE_STATE);
-            oledSetBottomText("Relay OFF", 1);
+        switch (messageIndex) {
+            case 0:
+                lcdPrint("Hola mundo", "ESP32 con LCD");
+                break;
+            case 1:
+                lcdPrint("Este es un mensaje mucho mas largo que 16 caracteres", 
+                         "Scroll hardware activo");
+                break;
+            case 2:
+                lcdPrint("TFG Integracion IoT con ESP32", 
+                         "Sensores y Actuadores");
+                break;
+            case 3:
+                lcdPrint("Mensaje corto", "Tambien corto");
+                break;
         }
+
+        messageIndex = (messageIndex + 1) % 4;
     }
 }

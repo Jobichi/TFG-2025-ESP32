@@ -4,5 +4,6 @@
 #include <Wire.h>
 
 void setupLCD();
-void lcdPrint(const String& line1, const String& line2 ="");
+void lcdPrint(const String& line1, const String& line2 = "");
 void lcdClear();
+void lcdHandle();
