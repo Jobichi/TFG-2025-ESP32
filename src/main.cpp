@@ -1,40 +1,26 @@
-#include <Arduino.h>
-#include "Screens/LcdManager.h"
+#include "Screens/OledManager.h"
+#include "Sensors/Ds18b20Sensor.h"
 
-unsigned long lastChange = 0;
-const unsigned long changeInterval = 16000; // cambiar mensaje cada 8s
-int messageIndex = 0;
+Ds18b20Sensor sensorSalon(4, 2000, "Salón");   // GPIO4
+Ds18b20Sensor sensorCocina(5, 2000, "Cocina"); // GPIO5
 
 void setup() {
-    Serial.begin(115200);
-    setupLCD();
-    lcdPrint("Inicializando...", "LCD Manager");
+  Serial.begin(115200);
+  setupOLED();
+
+  sensorSalon.begin();
+  sensorCocina.begin();
 }
 
 void loop() {
-    lcdHandle(); // 👉 refresca el scroll hardware si está activo
+  sensorSalon.loop();
+  sensorCocina.loop();
 
-    unsigned long now = millis();
-    if (now - lastChange >= changeInterval) {
-        lastChange = now;
+  String linea1 = String(sensorSalon.name()) + ": " + String(sensorSalon.lastTemperatureC(), 1) + "°C";
+  String linea2 = String(sensorCocina.name()) + ": " + String(sensorCocina.lastTemperatureC(), 1) + "°C";
 
-        switch (messageIndex) {
-            case 0:
-                lcdPrint("Hola mundo", "ESP32 con LCD");
-                break;
-            case 1:
-                lcdPrint("Este es un mensaje mucho mas largo que 16 caracteres", 
-                         "Scroll hardware activo");
-                break;
-            case 2:
-                lcdPrint("TFG Integracion IoT con ESP32", 
-                         "Sensores y Actuadores");
-                break;
-            case 3:
-                lcdPrint("Mensaje corto", "Tambien corto");
-                break;
-        }
-
-        messageIndex = (messageIndex + 1) % 4;
-    }
+  oledSetTopText(linea1, 1);
+  oledSetBottomText(linea2, 1);
+  oledHandle();
 }
+        
