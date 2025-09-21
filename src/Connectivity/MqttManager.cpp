@@ -1,5 +1,4 @@
 #include "Connectivity/MqttManager.h"
-#include "Connectivity/WifiManager.h"
 
 static WiFiClient espClient;
 PubSubClient mqttClient(espClient);
@@ -16,13 +15,11 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
         Serial.printf("[MQTT] Mensaje recibido en [%s]: %s\n", topic, msg.c_str());
     #endif
 
-    // Si recibimos un ping, respondemos con un pong
-    String pingTopic = String(DEVICE_ID) + "/ping";
-    if (String(topic) == pingTopic) {
-        String pongTopic = String(DEVICE_ID) + "/pong";
-        mqttPublish(pongTopic.c_str(), "pong");
+    // Confirmación de pong desde la Raspberry
+    String pongTopic = String(DEVICE_ID) + "/pong";
+    if (String(topic) == pongTopic) {
         #if DEBUG
-            Serial.printf("[MQTT] Respondido con PONG en [%s]\n", pongTopic.c_str());
+            Serial.printf("[MQTT] PONG recibido → conectividad confirmada\n");
         #endif
     }
 }
@@ -31,24 +28,27 @@ static void reconnectMqtt() {
     if (mqttClient.connected()) return;
 
     #if DEBUG
-        Serial.print("[MQTT] Intentando conexión...");
+        Serial.print("[MQTT] Intentando conexión... ");
     #endif
 
     if (mqttClient.connect(MQTTT_CLIENT_ID, MQTT_USER, MQTT_PASS)) {
         #if DEBUG
-            Serial.println("[MQTT] ¡Conectado!");
+            Serial.println("¡Conectado!");
         #endif
 
-        // Subscripción de inicialización para testeo automático.
+        // Suscribirse al PONG del propio dispositivo
+        String pongTopic = String(DEVICE_ID) + "/pong";
+        mqttSubscribe(pongTopic.c_str());
+
+        // Enviar un único PING para comprobar conectividad
         String pingTopic = String(DEVICE_ID) + "/ping";
-        mqttSubscribe(pingTopic.c_str());   
+        mqttPublish(pingTopic.c_str(), "ping");
+
     } else {
         #if DEBUG
             Serial.printf("Fallo rc=%d, reintento en 5s\n", mqttClient.state());
         #endif
     }
-
-    
 }
 
 void setupMqtt() {
@@ -58,9 +58,8 @@ void setupMqtt() {
 }
 
 void handleMqtt() {
-    if (!mqttClient.connected()){
+    if (!mqttClient.connected()) {
         unsigned long now = millis();
-
         if (now - lastReconnectAttempt > 5000) {
             lastReconnectAttempt = now;
             reconnectMqtt();
@@ -70,7 +69,7 @@ void handleMqtt() {
     }
 }
 
-bool mqttPublish (const char* topic, const char* payload, bool retained) {
+bool mqttPublish(const char* topic, const char* payload, bool retained) {
     if (!mqttClient.connected()) return false;
     #if DEBUG
         Serial.printf("[MQTT] Publicando en [%s]: %s\n", topic, payload);
