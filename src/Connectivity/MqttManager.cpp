@@ -1,4 +1,5 @@
 #include "Connectivity/MqttManager.h"
+#include "CommandHandler.h"
 
 static WiFiClient espClient;
 PubSubClient mqttClient(espClient);
@@ -22,6 +23,9 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
             Serial.printf("[MQTT] PONG recibido → conectividad confirmada\n");
         #endif
     }
+
+    // Delegamos al CommandHandler:
+    handleMqttCommand(String(topic), msg);
 }
 
 static void reconnectMqtt() {
@@ -43,6 +47,10 @@ static void reconnectMqtt() {
         // Enviar un único PING para comprobar conectividad
         String pingTopic = String(DEVICE_ID) + "/ping";
         mqttPublish(pingTopic.c_str(), "ping");
+
+        // Subscripción al canal de comandos para este ESP32:
+        String cmdTopic = "cmd/" + String(DEVICE_ID) + "/actuators";
+        mqttSubscribe(cmdTopic.c_str());
 
     } else {
         #if DEBUG
