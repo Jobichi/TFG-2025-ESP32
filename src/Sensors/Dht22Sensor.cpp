@@ -36,3 +36,10 @@ void Dht22Sensor::loop() {
     lastH_ = h;
     lastT_ = t;
 }
+
+std::map<String, float> Dht22Sensor::readValues() {
+    std::map<String, float> data;
+    data["temp"] = lastTemperatureC();
+    data["hum"] = lastHumidity();
+    return data;
+}

@@ -1,15 +1,14 @@
 #include <Arduino.h>
 #include "Connectivity/WifiManager.h"
 #include "Connectivity/MqttManager.h"
-#include "CommandHandler.h"
-#include "Actuators/Relay.h"
-#include "Actuators/Buzzer.h"
+#include "Logic/SensorManager.h"
+#include "Sensors/Dht22Sensor.h"
 
-// Actuadores de este ESP32
-Buzzer buzzer1(18, "Buzzer1");
+// Sensor DHT22 en GPIO23, intervalo de muestreo 5s
+Dht22Sensor dht22(23, 5000, "dht22");
 
-// Array genérico de actuadores
-ActuatorBase* actuators[] = { &buzzer1 };
+// Array genérico de sensores
+SensorBase* sensors[] = { &dht22 };
 
 void setup() {
     Serial.begin(115200);
@@ -17,11 +16,12 @@ void setup() {
     setupWifi();
     setupMqtt();
 
-    // Registrar los actuadores de este dispositivo
-    setupCommandHandler(actuators, sizeof(actuators) / sizeof(actuators[0]));
+    // Registrar sensores en el manager
+    setupSensorManager(sensors, sizeof(sensors) / sizeof(sensors[0]));
 }
 
 void loop() {
     handleWifi();
     handleMqtt();
+    handleSensors();   // Publicación periódica
 }

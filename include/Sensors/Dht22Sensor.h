@@ -16,6 +16,8 @@ public:
     float lastTemperatureC() const { return lastT_; }
     float lastHumidity() const { return lastH_; }
     unsigned long lastSampleMs() const { return lastReadMs_; }
+    
+    std::map<String, float> readValues() override;
 
 private:
     uint8_t pin_;

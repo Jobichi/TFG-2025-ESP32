@@ -1,5 +1,6 @@
 #include "Connectivity/MqttManager.h"
-#include "CommandHandler.h"
+#include "Logic/CommandHandler.h"
+#include "Logic/SensorManager.h"
 
 static WiFiClient espClient;
 PubSubClient mqttClient(espClient);
@@ -26,6 +27,7 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 
     // Delegamos al CommandHandler:
     handleMqttCommand(String(topic), msg);
+    handleSensorRequest(String(topic), msg);
 }
 
 static void reconnectMqtt() {
@@ -51,6 +53,10 @@ static void reconnectMqtt() {
         // Subscripción al canal de comandos para este ESP32:
         String cmdTopic = "cmd/" + String(DEVICE_ID) + "/actuators";
         mqttSubscribe(cmdTopic.c_str());
+
+        // Subscripción al canal de peticiones GET:
+        String getTopic = String("get/") + DEVICE_ID + "/#";
+        mqttSubscribe(getTopic.c_str());
 
     } else {
         #if DEBUG
