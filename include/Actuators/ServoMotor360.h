@@ -39,7 +39,6 @@ class ServoMotor360 : public ActuatorBase {
             FORWARD, 
             BACKWARD 
         };
-        
         Direction dir_{STOPPED};
 
         // Parámetros PWM para SG90 continuo

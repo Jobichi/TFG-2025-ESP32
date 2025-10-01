@@ -16,3 +16,5 @@ bool mqttSubscribe(const char* topic);
 
 // Callback que usa PubSubClient (firma fija)
 void mqttCallback(char* topic, byte* payload, unsigned int length);
+
+bool isMqttConnected();

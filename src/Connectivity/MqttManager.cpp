@@ -17,17 +17,33 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
         Serial.printf("[MQTT] Mensaje recibido en [%s]: %s\n", topic, msg.c_str());
     #endif
 
-    // Confirmación de pong desde la Raspberry
+    String topicStr = String(topic);
+    
+    // 1. Manejar PONG
     String pongTopic = String(DEVICE_ID) + "/pong";
-    if (String(topic) == pongTopic) {
+    if (topicStr == pongTopic) {
         #if DEBUG
             Serial.printf("[MQTT] PONG recibido → conectividad confirmada\n");
         #endif
+        return;  // IMPORTANTE: salir después de manejar
     }
-
-    // Delegamos al CommandHandler:
-    handleMqttCommand(String(topic), msg);
-    handleSensorRequest(String(topic), msg);
+    
+    // 2. Manejar COMANDOS de actuadores
+    String cmdTopic = "cmd/" + String(DEVICE_ID) + "/actuators";
+    if (topicStr == cmdTopic) {
+        handleMqttCommand(topicStr, msg);
+        return;  // IMPORTANTE: salir después de manejar
+    }
+    
+    // 3. Manejar PETICIONES GET de sensores  
+    if (topicStr.startsWith("get/" + String(DEVICE_ID) + "/")) {
+        handleSensorRequest(topicStr, msg);
+        return;  // IMPORTANTE: salir después de manejar
+    }
+    
+    #if DEBUG
+        Serial.printf("[MQTT] Tópico no manejado: %s\n", topic);
+    #endif
 }
 
 static void reconnectMqtt() {
@@ -84,11 +100,24 @@ void handleMqtt() {
 }
 
 bool mqttPublish(const char* topic, const char* payload, bool retained) {
-    if (!mqttClient.connected()) return false;
+    if (!mqttClient.connected()) {
+        #if DEBUG
+            Serial.printf("[MQTT] ERROR: No conectado para publicar en [%s]\n", topic);
+        #endif
+        return false;
+    }
+    
+    bool success = mqttClient.publish(topic, payload, retained);
+    
     #if DEBUG
-        Serial.printf("[MQTT] Publicando en [%s]: %s\n", topic, payload);
+        if (success) {
+            Serial.printf("[MQTT] Publicado en [%s]: %s\n", topic, payload);
+        } else {
+            Serial.printf("[MQTT] ERROR al publicar en [%s]\n", topic);
+        }
     #endif
-    return mqttClient.publish(topic, payload, retained);
+    
+    return success;
 }
 
 bool mqttSubscribe(const char* topic) {
@@ -97,4 +126,8 @@ bool mqttSubscribe(const char* topic) {
         Serial.printf("[MQTT] Suscrito a [%s]\n", topic);
     #endif
     return mqttClient.subscribe(topic);
+}
+
+bool isMqttConnected(){
+    return mqttClient.connected();
 }

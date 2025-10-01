@@ -23,9 +23,7 @@ class MqSensor : public SensorBase{
         unsigned long lastSampleMs() const { return lastReadMs_; }
 
         // Umbral de Trigger (en caso de uso)
-        bool triggered() const{
-            return (thresholdV_ > 0.0 && (lastVoltage_ > thresholdV_));
-        }
+        bool triggered() const;
         
         float threshold() const { return thresholdV_; }
 

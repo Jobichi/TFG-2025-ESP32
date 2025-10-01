@@ -68,12 +68,6 @@ int ServoMotor360::usToDuty(int us) const {
 }
 
 String ServoMotor360::stateString() {
-    if (!active_) return "STOP";
-    // Si quieres más detalle, puedes guardar dirección y velocidad
-    return "ACTIVE";
-}
-
-String ServoMotor360::stateString() {
     switch (dir_) {
         case FORWARD:  return "FORWARD";
         case BACKWARD: return "BACKWARD";
