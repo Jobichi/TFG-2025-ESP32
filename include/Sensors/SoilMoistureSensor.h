@@ -4,18 +4,22 @@
 
 class SoilMoistureSensor : public SensorBase {
     public:
-        explicit SoilMoistureSensor(uint8_t pin,
+        explicit SoilMoistureSensor(
+            uint8_t pin,
             unsigned long readPeriodMs = 2000,
             int rawDry = 3100,
             int rawWet = 2150,
             int thresholdPercent = 40,
             int hysteresisPercent = 5,
-            const char* friendlyName = "SoilMoisture");
+            const char* friendlyName = "SoilMoisture",
+            const char* location = "room-name"
+        );
 
         bool begin() override;
         void loop() override;
         bool isHealthy() override { return healthy_; }
-        const char* name() const override { return friendlyName_; }
+        const char* name() const override { return friendlyName_.c_str(); }
+        const char* location() const override { return location_.c_str(); }
 
         int lastRaw() const { return lastRaw_; }
         float lastVoltage() const { return lastVoltage_; }
@@ -27,6 +31,10 @@ class SoilMoistureSensor : public SensorBase {
         void setThreshold(int threshold) { thresholdPercent_ = threshold; }
         void setHysteresis(int hysteresis) { hysteresisPercent_ = hysteresis; }
 
+        std::map<String, float> readValues() override;
+
+        String stateString() override;
+
     private:
         uint8_t pin_;
         unsigned long readPeriodMs_;
@@ -34,7 +42,8 @@ class SoilMoistureSensor : public SensorBase {
         int rawWet_;
         int thresholdPercent_;
         int hysteresisPercent_;
-        const char* friendlyName_;
+        String friendlyName_;
+        String location_;
 
         bool healthy_{false};
         int lastRaw_{0};

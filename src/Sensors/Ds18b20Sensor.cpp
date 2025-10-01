@@ -1,12 +1,15 @@
 #include "Sensors/Ds18b20Sensor.h"
 #include "configCredentials.h"
 
-Ds18b20Sensor::Ds18b20Sensor(uint8_t pin,
-                             unsigned long readPeriodMs,
-                             const char* friendlyName)
+Ds18b20Sensor::Ds18b20Sensor(
+    uint8_t pin,
+    unsigned long readPeriodMs,
+    const char* friendlyName,
+    const char* location)
 : pin_(pin),
   readPeriodMs_(readPeriodMs),
   friendlyName_(friendlyName),
+  location_(location),
   oneWire_(pin),
   sensors_(&oneWire_) {}
 
@@ -35,4 +38,15 @@ void Ds18b20Sensor::loop() {
 
     healthy_ = true;
     lastT_ = t;
+}
+
+std::map<String, float> Ds18b20Sensor::readValues() {
+    std::map<String, float> data;
+    data["temp"] = lastT_;
+    return data;
+}
+
+String Ds18b20Sensor::stateString() {
+    if(!isHealthy()) return "ERROR";
+    return String(lastT_, 1) + "ºC";
 }

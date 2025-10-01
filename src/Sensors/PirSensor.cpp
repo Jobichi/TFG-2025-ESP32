@@ -1,18 +1,21 @@
 #include "Sensors/PirSensor.h"
 #include "configCredentials.h"
 
-PirSensor::PirSensor(uint8_t pin,
-                     bool activeHigh,
-                     bool usePulldown,
-                     unsigned long warmupMs,
-                     unsigned long stableMs,
-                     const char* friendlyName)
+PirSensor::PirSensor(
+    uint8_t pin,
+    bool activeHigh,
+    bool usePulldown,
+    unsigned long warmupMs,
+    unsigned long stableMs,
+    const char* friendlyName,
+    const char* location)
 : pin_(pin),
   activeHigh_(activeHigh),
   usePulldown_(usePulldown),
   warmupMs_(warmupMs),
   stableMs_(stableMs),
-  friendlyName_(friendlyName) {}
+  friendlyName_(friendlyName),
+  location_(location) {}
 
 bool PirSensor::begin() {
     pinMode(pin_, usePulldown_ ? INPUT_PULLDOWN : INPUT);
@@ -51,4 +54,15 @@ void PirSensor::loop() {
             #endif
         }
     }
+}
+
+std::map<String, float> PirSensor::readValues() {
+    std::map<String, float> data;
+    data["motion"] = motion_ ? 1.0f : 0.0f;
+    return data;
+}
+
+String PirSensor::stateString() {
+    if (!healthy_) return "CALIBRANDO";
+    return motion_ ? "MOV" : "Libre";
 }

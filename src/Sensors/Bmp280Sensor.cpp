@@ -1,12 +1,15 @@
 #include "Sensors/Bmp280Sensor.h"
 #include "configCredentials.h"
 
-Bmp280Sensor::Bmp280Sensor(uint8_t i2cAddress,
-                           unsigned long readPeriodMs,
-                           const char* friendlyName)
+Bmp280Sensor::Bmp280Sensor(
+    uint8_t i2cAddress,
+    unsigned long readPeriodMs,
+    const char* friendlyName,
+    const char* location)
 : i2cAddress_(i2cAddress),
   readPeriodMs_(readPeriodMs),
-  friendlyName_(friendlyName) {}
+  friendlyName_(friendlyName),
+  location_(location) {}
 
 bool Bmp280Sensor::begin() {
     if (!bmp_.begin(i2cAddress_)) {
@@ -45,4 +48,16 @@ void Bmp280Sensor::loop() {
         Serial.printf("[%s] T: %.2f °C, P: %.2f hPa\n",
                       friendlyName_, lastT_, lastP_);
     #endif
+}
+
+std::map<String, float> Bmp280Sensor::readValues() {
+    std::map<String, float> data;
+    data["temp"] = lastT_;
+    data["pres"] = lastP_;
+    return data;
+}
+
+String Bmp280Sensor::stateString() {
+    if(!isHealthy()) return "ERROR";
+    return String(lastT_, 1) + "ºC " + String(lastP_, 1) + "hPa";
 }

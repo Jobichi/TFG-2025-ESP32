@@ -7,8 +7,8 @@ public:
     explicit Dht22Sensor(
         uint8_t pin,
         unsigned long readPeriodMs,
-        const char* friendlyName,
-        const char* location
+        const char* friendlyName = "DHT22",
+        const char* location = "room-name"
     );
 
     bool begin() override;

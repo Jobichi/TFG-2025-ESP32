@@ -1,12 +1,15 @@
 #include "Sensors/LdrSensor.h"
 #include "configCredentials.h"  // Para DEBUG
 
-LdrSensor::LdrSensor(uint8_t pin,
-                     const char* friendlyName,
-                     unsigned long readPeriodMs)
+LdrSensor::LdrSensor(
+    uint8_t pin,
+    unsigned long readPeriodMs,
+    const char* friendlyName,
+    const char* location)
 : pin_(pin),
   friendlyName_(friendlyName),
-  readPeriodMs_(readPeriodMs) {}
+  readPeriodMs_(readPeriodMs),
+  location_(location) {}
 
 bool LdrSensor::begin() {
     // Configurar ADC
@@ -27,4 +30,16 @@ void LdrSensor::loop() {
     #if DEBUG
         Serial.printf("[%s] RAW: %d | %d%%\n", friendlyName_, lastRaw_, lastPercent_);
     #endif
+}
+
+std::map<String,float> LdrSensor::readValues() {
+    std::map<String,float> data;
+    data["raw"] = lastRaw_;
+    data["percent"] = lastPercent_;
+    return data;
+}
+
+String LdrSensor::stateString() {
+    if (!healthy_) return "ERROR";
+    return String(lastRaw_) + " (" + String(lastPercent_) + "%)";
 }

@@ -8,14 +8,16 @@ SoilMoistureSensor::SoilMoistureSensor(
     int rawWet,
     int thresholdPercent,
     int hysteresisPercent,
-    const char* friendlyName
+    const char* friendlyName,
+    const char* location
 ) : pin_(pin),
     readPeriodMs_(readPeriodMs),
     rawDry_(rawDry),
     rawWet_(rawWet),
     thresholdPercent_(thresholdPercent),
     hysteresisPercent_(hysteresisPercent),
-    friendlyName_(friendlyName) {}
+    friendlyName_(friendlyName),
+    location_(location) {}
 
 bool SoilMoistureSensor::begin(){
     pinMode(pin_, INPUT);
@@ -48,4 +50,18 @@ void SoilMoistureSensor::loop(){
                       friendlyName_, lastRaw_, lastVoltage_, lastPercent_,
                       dryState_ ? "SECO" : "HUMEDO");
     #endif
+}
+
+std::map<String, float> SoilMoistureSensor::readValues() {
+    std::map<String, float> data;
+    data["raw"] = lastRaw_;
+    data["volt"] = lastVoltage_;
+    data["percent"] = lastPercent_;
+    data["dry"] = dryState_ ? 1.0f : 0.0f;
+    return data;
+}
+
+String SoilMoistureSensor::stateString() {
+    if (!healthy_) return "ERROR";
+    return String(lastPercent_) + "% " + (dryState_ ? "SECO" : "HUMEDO");
 }

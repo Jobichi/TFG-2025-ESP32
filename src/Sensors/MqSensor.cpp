@@ -5,11 +5,13 @@ MqSensor::MqSensor(
     uint8_t pin,
     unsigned long readPeriodMs,
     float thresholdV,
-    const char* friendlyName
+    const char* friendlyName,
+    const char* location
 ) : pin_(pin),
     readPeriodMs_(readPeriodMs),
     thresholdV_(thresholdV),
-    friendlyName_(friendlyName) {}
+    friendlyName_(friendlyName),
+    location_(location) {}
 
 bool MqSensor::begin(){
     pinMode(pin_, INPUT);
@@ -36,4 +38,16 @@ void MqSensor::loop(){
         }
         Serial.println();
     #endif
+}
+
+std::map<String, float> MqSensor::readValues() {
+    std::map<String, float> data;
+    data["raw"] = lastRaw_;
+    data["volt"] = lastVoltage_;
+    data["trigger"] = triggered() ? 1.0f : 0.0f;
+    return data;
+}
+
+bool MqSensor::triggered() const {
+    return lastVoltage_ >= thresholdV_;
 }
