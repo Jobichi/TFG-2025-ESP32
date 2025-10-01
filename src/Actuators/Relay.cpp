@@ -1,9 +1,15 @@
 #include "Actuators/Relay.h"
-# include "configCredentials.h"
+#include "configCredentials.h"
 
 Relay::Relay(
-    uint8_t pin, bool activeLow, const char* friendlyName
-) : pin_(pin), activeLow_(activeLow), friendlyName_(friendlyName) {}
+    uint8_t pin, 
+    bool activeLow, 
+    const char* friendlyName,
+    const char* location
+) : pin_(pin), 
+    activeLow_(activeLow), 
+    friendlyName_(friendlyName),
+    location_(location) {}
 
 bool Relay::begin() {
     pinMode(pin_, OUTPUT);

@@ -6,12 +6,14 @@ class ServoMotor360 : public ActuatorBase {
         explicit ServoMotor360(
             uint8_t pin,
             int channel = 0,
-            const char* friendlyName = "Servo360"
+            const char* friendlyName = "Servo360",
+            const char* location = "room-name"
         );
 
         bool begin() override;
         void loop() override;
-        const char* name() const override { return friendlyName_; }
+        const char* name() const override { return friendlyName_.c_str(); }
+        const char* location() const override { return location_.c_str(); }
 
         void on() override;
         void off() override;
@@ -22,15 +24,27 @@ class ServoMotor360 : public ActuatorBase {
         void backward(int speed = 100);
         void stop();
 
+        String stateString() override;
+
     private:
         uint8_t pin_;
         int channel_;
-        const char* friendlyName_;
+        String friendlyName_;
+        String location_;
         bool active_{false};
 
-        // Parámetors PWM para SG90 continuo
+        // Dirección del movimiento
+        enum Direction { 
+            STOPPED, 
+            FORWARD, 
+            BACKWARD 
+        };
+        
+        Direction dir_{STOPPED};
+
+        // Parámetros PWM para SG90 continuo
         static constexpr int SERVO_FREQ = 50;
-        static constexpr int SERVO_RES = 16;
+        static constexpr int SERVO_RES  = 16;
         static constexpr int PULSE_STOP = 1500;
         static constexpr int PULSE_RANGE = 500;
 

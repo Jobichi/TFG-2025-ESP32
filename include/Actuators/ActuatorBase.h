@@ -21,5 +21,5 @@ class ActuatorBase{
         virtual bool isActive() const = 0;  
 
         // Estado como String:
-        virtual String stateString() const = 0;
+        virtual String stateString() = 0;
 };
