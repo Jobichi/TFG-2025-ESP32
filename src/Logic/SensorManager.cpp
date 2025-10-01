@@ -23,10 +23,13 @@ void handleSensors() {
     static unsigned long lastPublish = 0;
     const unsigned long publishInterval = 30000; // 30 segundos
 
+    // --- Actualiza el estado de cada sensor ---
     for (int i = 0; i < g_sensorCount; i++) {
-        g_sensors[i]->loop(); // el sensor se actualiza con su propio intervalo
+        g_sensors[i]->loop();
     }
 
+    // --- Publicación periódica SOLO si DEBUG está activo ---
+    #if DEBUG
     unsigned long now = millis();
     if (now - lastPublish >= publishInterval) {
         lastPublish = now;
@@ -36,7 +39,8 @@ void handleSensors() {
                 auto values = g_sensors[i]->readValues();
 
                 JsonDocument doc;
-                
+                doc["id"] = i;
+
                 for (auto const& kv : values) {
                     doc[kv.first] = kv.second;
                 }
@@ -47,13 +51,12 @@ void handleSensors() {
 
                 mqttPublish(topic.c_str(), payload.c_str());
 
-                #if DEBUG
-                    Serial.printf("[SENSORS] Publicado en [%s]: %s\n",
-                                  topic.c_str(), payload.c_str());
-                #endif
+                Serial.printf("[SENSORS] Publicado en [%s]: %s\n",
+                              topic.c_str(), payload.c_str());
             }
         }
     }
+    #endif
 }
 
 void handleSensorRequest(const String& topic, const String& payload) {

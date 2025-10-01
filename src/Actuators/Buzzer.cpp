@@ -1,8 +1,8 @@
 #include "Actuators/Buzzer.h"
 #include "configCredentials.h"
 
-Buzzer::Buzzer(uint8_t pin, const char* friendlyName)
-    : pin_(pin), friendlyName_(friendlyName) {} 
+Buzzer::Buzzer(uint8_t pin, const char* friendlyName, const char* location)
+    : pin_(pin), friendlyName_(friendlyName), location_(location) {} 
 
 bool Buzzer::begin(){
     pinMode(pin_, OUTPUT);
