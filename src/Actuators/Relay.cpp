@@ -1,5 +1,4 @@
 #include "Actuators/Relay.h"
-#include "configCredentials.h"
 
 Relay::Relay(
     uint8_t pin, 
@@ -37,3 +36,21 @@ void Relay::off() {
     #endif
 }
 
+bool Relay::applyCommand(const char* command) {
+    if (strcmp(command, "ON") == 0) {
+        on();
+        return true;
+    }
+    if (strcmp(command, "OFF") == 0) {
+        off();
+        return true;
+    }
+
+    if (strcmp(command, "TOGGLE") == 0) {
+        if (active_) off();
+        else on();
+        return true;
+    }
+
+    return false;
+}

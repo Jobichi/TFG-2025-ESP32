@@ -1,5 +1,4 @@
 #include "Actuators/Buzzer.h"
-#include "configCredentials.h"
 
 Buzzer::Buzzer(uint8_t pin, const char* friendlyName, const char* location)
     : pin_(pin), friendlyName_(friendlyName), location_(location) {} 
@@ -26,4 +25,16 @@ void Buzzer::off() {
     #if DEBUG
         Serial.printf("[%s] OFF\n", friendlyName_);
     #endif
+}
+
+bool Buzzer::applyCommand(const char* command) {
+    if (strcmp(command, "ON") == 0) {
+        on();
+        return true;
+    }
+    if (strcmp(command, "OFF") == 0) {
+        off();
+        return true;
+    }
+    return false; 
 }

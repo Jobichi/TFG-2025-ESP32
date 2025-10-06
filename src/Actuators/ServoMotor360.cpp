@@ -1,27 +1,27 @@
 #include "Actuators/ServoMotor360.h"
-#include "configCredentials.h"
 
-ServoMotor360::ServoMotor360(
-    uint8_t pin, 
-    int channel, 
-    const char* friendlyName,
-    const char* location
-) : pin_(pin), 
-    channel_(channel), 
-    friendlyName_(friendlyName),
-    location_(location) {}
+ServoMotor360::ServoMotor360(uint8_t pin, int channel, const char* friendlyName, const char* location)
+    : pin_(pin), channel_(channel), friendlyName_(friendlyName), location_(location) {}
 
 bool ServoMotor360::begin() {
-    ledcSetup(channel_, SERVO_FREQ, SERVO_RES);
-    ledcAttachPin(pin_, channel_);
-    stop();
+    // Adjuntar servo y configurar PWM
+    servo_.setPeriodHertz(50);
+    servo_.attach(pin_, SERVO_MIN_US, SERVO_MAX_US);
+    stop();  // arranca parado
+
+    #if DEBUG
+        Serial.printf("[SERVO] %s inicializado en pin %d\n", friendlyName_.c_str(), pin_);
+    #endif
+
     return true;
 }
 
-void ServoMotor360::loop() {}
+void ServoMotor360::loop() {
+    // Si tuvieras lógica de tiempo o feedback, iría aquí
+}
 
 void ServoMotor360::on() {
-    forward(100);
+    forward();
 }
 
 void ServoMotor360::off() {
@@ -30,47 +30,63 @@ void ServoMotor360::off() {
 
 void ServoMotor360::forward(int speed) {
     speed = constrain(speed, 0, 100);
-    int us = PULSE_STOP - map(speed, 0, 100, 0, PULSE_RANGE);
-    ledcWrite(channel_, usToDuty(us));
-    active_ = (speed > 0);
-    dir_ = active_ ? FORWARD : STOPPED;
+    int us = map(speed, 0, 100, SERVO_STOP_US, SERVO_MAX_US);
+    servo_.writeMicroseconds(us);
+    dir_ = FORWARD;
+    active_ = true;
 
     #if DEBUG
-        Serial.printf("[%s] FORWARD %d%%\n", friendlyName_, speed);
+        Serial.printf("[SERVO] %s → FORWARD (%d%%)\n", friendlyName_.c_str(), speed);
     #endif
 }
 
 void ServoMotor360::backward(int speed) {
     speed = constrain(speed, 0, 100);
-    int us = PULSE_STOP + map(speed, 0, 100, 0, PULSE_RANGE);
-    ledcWrite(channel_, usToDuty(us));
-    active_ = (speed > 0);
-    dir_ = active_ ? BACKWARD : STOPPED;
+    int us = map(speed, 0, 100, SERVO_STOP_US, SERVO_MIN_US);
+    servo_.writeMicroseconds(us);
+    dir_ = BACKWARD;
+    active_ = true;
 
     #if DEBUG
-        Serial.printf("[%s] BACKWARD %d%%\n", friendlyName_, speed);
+        Serial.printf("[SERVO] %s → BACKWARD (%d%%)\n", friendlyName_.c_str(), speed);
     #endif
 }
 
 void ServoMotor360::stop() {
-    ledcWrite(channel_, usToDuty(PULSE_STOP));
-    active_ = false;
+    servo_.writeMicroseconds(SERVO_STOP_US);
     dir_ = STOPPED;
+    active_ = false;
 
     #if DEBUG
-        Serial.printf("[%s] STOP\n", friendlyName_);
+        Serial.printf("[SERVO] %s → STOP\n", friendlyName_.c_str());
     #endif
 }
 
-
-int ServoMotor360::usToDuty(int us) const {
-    return (int)((float)us / (1000000.0 / SERVO_FREQ) * (1 << SERVO_RES));
-}
-
-String ServoMotor360::stateString() {
+String ServoMotor360::stateString() const {
     switch (dir_) {
-        case FORWARD:  return "FORWARD";
-        case BACKWARD: return "BACKWARD";
+        case FORWARD:  return "UP";
+        case BACKWARD: return "DOWN";
         default:       return "STOP";
     }
+}
+
+bool ServoMotor360::applyCommand(const char* command) {
+    if (strcasecmp(command, "UP") == 0 || strcasecmp(command, "OPEN") == 0) {
+        forward();
+        return true;
+    }
+    if (strcasecmp(command, "DOWN") == 0 || strcasecmp(command, "CLOSE") == 0) {
+        backward();
+        return true;
+    }
+    if (strcasecmp(command, "STOP") == 0) {
+        stop();
+        return true;
+    }
+
+    #if DEBUG
+        Serial.printf("[SERVO] Comando desconocido: %s\n", command);
+    #endif
+
+    return false;
 }

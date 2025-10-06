@@ -1,6 +1,4 @@
 #pragma once
-#include <Arduino.h>
-#include <ArduinoJson.h>
 #include "Sensors/SensorBase.h"
 
 // Inicialización de los sensores del dispositivo:

@@ -15,8 +15,8 @@
 #define MQTT_USER       "admin"
 #define MQTT_PASS       "admin1234"
 #define MQTTT_CLIENT_ID "ESP32Client"
-#define DEVICE_ID       "esp32_sala"
-//#define DEVICE_ID       "esp32_cocina"
+//#define DEVICE_ID       "esp32_sala"
+#define DEVICE_ID       "esp32_cocina"
 
 // Debug vars
-#define DEBUG           1
+#define DEBUG           0

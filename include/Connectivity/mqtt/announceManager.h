@@ -1,6 +1,5 @@
 #pragma once
-#include "Sensors/SensorBase.h"
-#include "Actuators/ActuatorBase.h"
+#include "Connectivity/MqttManager.h"
 
 // Configura el manager de anuncios
 void setupAnnounceManager(
@@ -10,4 +9,6 @@ void setupAnnounceManager(
 );
 
 // Maneja las publicaciones de announce
+void handleAnnounceMessage(const String& topic, const String& payload);
 void handleAnnounce();
+void publishAllAnnouncesOnce();

@@ -18,7 +18,9 @@ class Buzzer : public ActuatorBase{
         void off() override;
         bool isActive() const override { return active_; }
 
-        String stateString() override { return active_ ? "ON" : "OFF"; }
+        String stateString() const override { return active_ ? "ON" : "OFF"; }
+
+        bool applyCommand(const char* command) override;
 
     private:
         uint8_t pin_;

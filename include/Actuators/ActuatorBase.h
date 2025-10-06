@@ -1,5 +1,6 @@
 #pragma once
 #include <Arduino.h>
+#include "configCredentials.h"
 
 class ActuatorBase{
     public:
@@ -21,5 +22,8 @@ class ActuatorBase{
         virtual bool isActive() const = 0;  
 
         // Estado como String:
-        virtual String stateString() = 0;
+        virtual String stateString() const = 0;
+
+        // Método para aplicación de comandos recibidos:
+        virtual bool applyCommand(const char* command) = 0;
 };

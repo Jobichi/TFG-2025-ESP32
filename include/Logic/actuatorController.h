@@ -1,5 +1,4 @@
 #pragma once
-#include <Arduino.h>
 #include "Actuators/ActuatorBase.h"
 
 // Inicialización del manejador de los actuadores:
