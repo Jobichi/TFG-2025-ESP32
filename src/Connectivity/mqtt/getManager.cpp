@@ -21,7 +21,8 @@ void handleGetMessage(const String& topic, const String& payload) {
     if (!sensor) return;
 
     // --- Construir JSON de respuesta ---
-    StaticJsonDocument<256> doc;
+    JsonDocument doc;
+
     doc["id"] = sensorId;
     doc["type"] = "sensor";
     doc["name"] = sensor->name();

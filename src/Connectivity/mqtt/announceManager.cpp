@@ -32,7 +32,8 @@ void publishAllAnnouncesOnce() {
     // --- Sensores ---
     for (int i = 0; i < g_sensorCount; i++) {
         if (!g_sensors[i]) continue;
-        StaticJsonDocument<256> doc;
+        JsonDocument doc;
+
         doc["id"] = i;
         doc["name"] = g_sensors[i]->name();
         doc["location"] = g_sensors[i]->location();
@@ -48,7 +49,8 @@ void publishAllAnnouncesOnce() {
     // --- Actuadores ---
     for (int i = 0; i < g_actuatorCount; i++) {
         if (!g_actuators[i]) continue;
-        StaticJsonDocument<256> doc;
+        JsonDocument doc;
+
         doc["id"] = i;
         doc["name"] = g_actuators[i]->name();
         doc["location"] = g_actuators[i]->location();

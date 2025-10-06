@@ -23,7 +23,8 @@ void handleSetMessage(const String& topic, const String& payload) {
     bool success = actuator->applyCommand(payload.c_str());
 
     // --- Construir JSON de respuesta ---
-    StaticJsonDocument<256> doc;
+    JsonDocument doc;
+
     doc["id"] = actuatorId;
     doc["type"] = "actuator";
     doc["name"] = actuator->name();
