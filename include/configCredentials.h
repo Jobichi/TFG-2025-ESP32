@@ -10,7 +10,7 @@
 #define WIFI_SUBNET     255,255,255,0
 
 // MQTT Credentials
-#define MQTT_HOST       "192.168.1.100"
+#define MQTT_HOST       "192.168.1.156"
 #define MQTT_PORT       1883
 #define MQTT_USER       "admin"
 #define MQTT_PASS       "admin1234"
