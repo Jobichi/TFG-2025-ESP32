@@ -6,3 +6,4 @@
 .vscode/ipch
 C:*
 *.log
+*.vscode

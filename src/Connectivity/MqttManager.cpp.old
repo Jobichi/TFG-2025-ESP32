@@ -1,0 +1,129 @@
+#include <Connectivity/
+//  Estructura de tabla de enrutamiento
+struct MqttRoute {
+    const char* prefix;
+    MqttHandler handler;
+};
+
+
+//  Tabla de rutas: asocia prefijos de tópico con sus manejadores
+static const MqttRoute mqttRoutes[] = {
+    {"set/", handleSetMessage},
+    {"get/", handleGetMessage},
+    {"announce/", handleAnnounceMessage},
+    {nullptr, nullptr}  // Fin de tabla
+};
+
+//  Variables internas
+static WiFiClient espClient;
+PubSubClient mqttClient(espClient);
+static unsigned long lastReconnectAttempt = 0;
+
+
+//  Callback general del cliente MQTT
+void mqttCallback(char* topic, byte* payload, unsigned int length) {
+    String topicStr = topic;
+    String msg(payload, length);
+    bool handled = false;
+
+    // Buscar manejador en la tabla
+    for (int i = 0; mqttRoutes[i].prefix != nullptr; i++) {
+        if (topicStr.startsWith(mqttRoutes[i].prefix)) {
+            mqttRoutes[i].handler(topicStr, msg);
+            handled = true;
+            break;
+        }
+    }
+
+    if (!handled && topicStr.endsWith("/pong")) {
+        handled = true;
+        #if DEBUG
+            Serial.printf("[MQTT] PONG recibido → conectividad confirmada\n");
+        #endif
+        return;  // IMPORTANTE: salir después de manejar
+    }
+
+    #if DEBUG
+    if (!handled)
+        Serial.printf("[MQTT] Tópico no manejado: %s\n", topic);
+    #endif
+}
+
+
+static void reconnectMqtt() {
+    if (mqttClient.connected()) return;
+
+    #if DEBUG
+        Serial.print("[MQTT] Intentando conexión... ");
+    #endif
+
+    if (mqttClient.connect(MQTTT_CLIENT_ID, MQTT_USER, MQTT_PASS)) {
+        #if DEBUG
+            Serial.println("¡Conectado!");
+        #endif
+
+        // Subscripción dinámica a los tópicos:
+        for (int i = 0; mqttRoutes[i].prefix != nullptr; i++) {
+            if (strcmp(mqttRoutes[i].prefix, "announce/") == 0)
+                continue;  // saltar announce
+            String topic = String(mqttRoutes[i].prefix) + DEVICE_ID + "/#";
+            mqttSubscribe(topic.c_str());
+        }
+
+
+        // Ping-pong interno de conectividad Broker - Sub/Pub
+        String pongTopic = String(DEVICE_ID) + "/pong";
+        mqttSubscribe(pongTopic.c_str());
+        
+        String pingTopic = String(DEVICE_ID) + "/ping";
+        mqttPublish(pingTopic.c_str(), "ping");
+
+        // Publicamos los anuncios:
+        publishAllAnnouncesOnce();
+
+    } else {
+        #if DEBUG
+            Serial.printf("Fallo rc=%d, reintento en 5s\n", mqttClient.state());
+        #endif
+    }
+}
+
+// Setup y loop MQTT
+void setupMqtt() {
+    mqttClient.setServer(MQTT_HOST, MQTT_PORT);
+    mqttClient.setCallback(mqttCallback);
+    reconnectMqtt();
+}
+
+void handleMqtt() {
+    if (!mqttClient.connected()) {
+        unsigned long now = millis();
+        if (now - lastReconnectAttempt > 5000) {
+            lastReconnectAttempt = now;
+            reconnectMqtt();
+        }
+    } else {
+        mqttClient.loop();
+    }
+}
+
+// Funciones auxiliares
+bool mqttPublish(const char* topic, const char* payload, bool retained) {
+    if (!mqttClient.connected()) return false;
+    bool ok = mqttClient.publish(topic, payload, retained);
+    #if DEBUG
+    Serial.printf(ok ? "[MQTT] → %s: %s\n" : "[MQTT] ERROR al publicar %s\n", topic, payload);
+    #endif
+    return ok;
+}
+
+bool mqttSubscribe(const char* topic) {
+    if (!mqttClient.connected()) return false;
+    mqttClient.subscribe(topic);
+    #if DEBUG
+    Serial.printf("[MQTT] Suscrito a %s\n", topic);
+    #endif
+    return true;
+}
+
+bool isMqttConnected() { return mqttClient.connected(); }
