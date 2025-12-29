@@ -103,9 +103,24 @@ void setup() {
     updatePublisher   = new UpdatePublisher(sensors, actuators, mqttManager);
     alertPublisher = new AlertPublisher(sensors, actuators, mqttManager);
 
+    // ---- Esperar a WiFi/MQTT antes de anunciar ----
+    Serial.println("[MAIN] Esperando WiFi...");
+    while (!wifiManager.isConnected()) {
+        wifiManager.loop();
+        delay(200);
+    }
+
+    Serial.println("[MAIN] Esperando MQTT...");
+    while (!mqttManager.isConnected()) {
+        mqttManager.loop();
+        delay(200);
+    }
+
     // ---- Publicamos "announce" para ver toda la estructura MQTT ----
     Serial.println("[MAIN] Publicando announce inicial...");
     announcePublisher->publishAll();
+    // Activar updates solo después del announce inicial
+    updatePublisher->setEnabled(true);
 }
 
 // ===============================

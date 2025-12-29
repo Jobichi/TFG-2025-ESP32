@@ -5,11 +5,17 @@ UpdatePublisher::UpdatePublisher(
     std::map<int, Actuator*> &actuators,
     MqttManager &mqtt
 )
-    : sensors_(sensors), actuators_(actuators), mqtt_(&mqtt)
+    : sensors_(sensors), actuators_(actuators), mqtt_(&mqtt), enabled_(false)
 {}
 
 // Publica update para todos los sensores y actuadores
 void UpdatePublisher::publishAll() {
+
+    if (!enabled_) {
+        if (Constants::DEBUG)
+            Serial.println("[UpdatePublisher] Saltando update: announce pendiente");
+        return;
+    }
 
     if (Constants::DEBUG)
         Serial.println("[UpdatePublisher] Publicando updates...");
@@ -69,4 +75,9 @@ void UpdatePublisher::publishActuator(int id, Actuator *a) {
         Serial.printf("[UpdatePublisher] ACTUATOR UPDATE => %s : %s\n",
                       topic.c_str(), payload.c_str());
     }
+}
+
+// Permite activar/desactivar la publicación (p.ej. esperar a announce)
+void UpdatePublisher::setEnabled(bool enabled) {
+    enabled_ = enabled;
 }

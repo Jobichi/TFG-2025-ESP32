@@ -17,6 +17,8 @@ public:
 
     // Publica UPDATE de todos los sensores y actuadores
     void publishAll();
+    // Habilita/deshabilita publicación (p.ej. esperar a announce inicial)
+    void setEnabled(bool enabled = true);
 
 private:
     void publishSensor(int id, Sensor *s);
@@ -25,4 +27,5 @@ private:
     std::map<int, Sensor*> &sensors_;
     std::map<int, Actuator*> &actuators_;
     MqttManager *mqtt_;
+    bool enabled_ = false;
 };

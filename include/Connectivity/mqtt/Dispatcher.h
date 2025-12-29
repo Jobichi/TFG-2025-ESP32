@@ -10,10 +10,10 @@
 
 // Contexto enviado a cada handler:
 struct HandlerContext {
-    TopicInfo info;         // Tópico parseado
+    TopicInfo info;                 // Tópico parseado
     JsonDocument *json;     // Payload JSON parseado
-    Sensor *sensor;         // no nulo si aplica a sensor
-    Actuator *actuator;     // no nulo si aplica a actuador
+    Sensor *sensor;             // no nulo si aplica a sensor
+    Actuator *actuator;         // no nulo si aplica a actuador
     MqttManager *mqtt;      // Para publicar responses
 };
 
