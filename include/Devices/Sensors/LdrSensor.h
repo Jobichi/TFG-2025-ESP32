@@ -3,13 +3,18 @@
 #include <ArduinoJson.h>
 #include <Devices/Sensors/Sensor.h>
 
+struct LdrConfig
+{
+    unsigned long readPeriodMs = 200UL;
+    const char *friendlyName = "LDR";
+    const char *location = "room-name";
+};
+
 class LdrSensor : public Sensor {
 public:
     explicit LdrSensor(
         uint8_t pin,
-        unsigned long readPeriodMs = 200,
-        const char* friendlyName = "LDR",
-        const char* location = "room-name"
+        const LdrConfig &cfg = {}
     );
 
     bool begin() override;

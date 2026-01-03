@@ -2,16 +2,20 @@
 #include <Devices/Sensors/Sensor.h>
 #include <Arduino.h>
 
-class PirSensor : public Sensor {
+struct PirConfig{
+    bool activeHigh = true;
+    bool usePulldown = false;
+    unsigned long warmupMs = 60000;
+    unsigned long stableMs = 80;
+    const char *friendlyName = "PIR";
+    const char *location = "room-name";
+};
+class PirSensor : public Sensor
+{
 public:
     explicit PirSensor(
         uint8_t pin,
-        bool activeHigh = true,
-        bool usePulldown = false,
-        unsigned long warmupMs = 60000,
-        unsigned long stableMs = 80,
-        const char* friendlyName = "PIR",
-        const char* location = "room-name"
+        const PirConfig &cfg = {}
     );
 
     bool begin() override;

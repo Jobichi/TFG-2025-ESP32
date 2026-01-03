@@ -22,12 +22,12 @@ class Actuator {
         virtual bool applyCommand(const char *cmd) = 0;
 
         // MQTT UPDATE
-        virtual void toUpdateJson(JsonDocument &doc) {
+        virtual void toUpdateJson(JsonDocument &doc) const{
             doc["state"] = stateString();
         }
 
         // MQTT ANNOUNCE
-        virtual void toAnnounceJson(JsonDocument &doc) {
+        virtual void toAnnounceJson(JsonDocument &doc) const{
             doc["name"] = name();
             doc["location"] = location();
         }

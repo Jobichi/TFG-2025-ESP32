@@ -3,13 +3,17 @@
 #include <ArduinoJson.h>
 #include <Devices/Sensors/Sensor.h>
 
-class DoorSensor : public Sensor {
+struct DoorSensorConfig{
+    bool activeHigh = true; // HIGH = puerta abierta (con INPUT_PULLUP)
+    const char *friendlyName = "DoorSensor";
+    const char *location = "room-name";
+};
+class DoorSensor : public Sensor
+{
 public:
     explicit DoorSensor(
         uint8_t pin,
-        bool activeHigh = true,   // HIGH = puerta abierta (con INPUT_PULLUP)
-        const char* friendlyName = "DoorSensor",
-        const char* location = "room-name"
+        const DoorSensorConfig &cfg = {}
     );
 
     bool begin() override;

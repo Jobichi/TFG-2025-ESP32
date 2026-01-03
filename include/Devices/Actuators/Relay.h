@@ -1,31 +1,36 @@
 #pragma once
 #include <Devices/Actuators/Actuator.h>
 
-class Relay : public Actuator {
-    public:
-        explicit Relay(
-            uint8_t pin,
-            bool activeLow = true,
-            const char* friendlyName = "Relay",
-            const char* location = "room-name"
-        );
+struct RelayConfig{
+    bool activeLow = true;
+    const char *friendlyName = "Relay";
+    const char *location = "room-name";
+};
 
-        bool begin() override;
-        void loop() override;
-        const char* name() const override { return friendlyName_.c_str(); }
-        const char* location() const override { return location_.c_str(); }
+class Relay : public Actuator
+{
+public:
+    explicit Relay(
+        uint8_t pin, 
+        const RelayConfig &cfg = {}
+    );
 
-        bool isActive() const override { return active_; } 
+    bool begin() override;
+    void loop() override;
+    const char *name() const override { return friendlyName_.c_str(); }
+    const char *location() const override { return location_.c_str(); }
 
-        String stateString() const override { return active_ ? "ON" : "OFF"; }
+    bool isActive() const override { return active_; }
 
-        // Interpretación de comandos MQTT
-        bool applyCommand(const char* command) override;
-        
-    private:
-        uint8_t pin_;
-        bool activeLow_;
-        String friendlyName_;
-        String location_;
-        bool active_{false};
+    String stateString() const override { return active_ ? "ON" : "OFF"; }
+
+    // Interpretación de comandos MQTT
+    bool applyCommand(const char *command) override;
+
+private:
+    uint8_t pin_;
+    bool activeLow_;
+    String friendlyName_;
+    String location_;
+    bool active_{false};
 };

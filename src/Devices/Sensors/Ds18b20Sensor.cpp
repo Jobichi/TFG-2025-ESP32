@@ -2,14 +2,12 @@
 
 Ds18b20Sensor::Ds18b20Sensor(
     uint8_t pin,
-    unsigned long readPeriodMs,
-    const char* friendlyName,
-    const char* location
+    const Ds18b20Config &cfg
 )
     : pin_(pin),
-      readPeriodMs_(readPeriodMs),
-      friendlyName_(friendlyName),
-      location_(location),
+      readPeriodMs_(cfg.readPeriodMs),
+      friendlyName_(cfg.friendlyName),
+      location_(cfg.location),
       oneWire_(pin),
       sensors_(&oneWire_)
 {}

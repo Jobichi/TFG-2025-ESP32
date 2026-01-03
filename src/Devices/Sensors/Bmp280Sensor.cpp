@@ -1,15 +1,12 @@
 #include <Devices/Sensors/Bmp280Sensor.h>
 
 Bmp280Sensor::Bmp280Sensor(
-    uint8_t i2cAddress,
-    unsigned long readPeriodMs,
-    const char* friendlyName,
-    const char* location
+    const Bmp280Config& cfg
 )
-    : i2cAddress_(i2cAddress),
-      readPeriodMs_(readPeriodMs),
-      friendlyName_(friendlyName),
-      location_(location)
+    : i2cAddress_(cfg.i2cAddress),
+      readPeriodMs_(cfg.readPeriodMs),
+      friendlyName_(cfg.friendlyName),
+      location_(cfg.location)
 {}
 
 bool Bmp280Sensor::begin() {
@@ -34,9 +31,10 @@ bool Bmp280Sensor::begin() {
 }
 
 void Bmp280Sensor::loop() {
-    if (!enabled_) return;
-    if (!healthy_) return;
+    if (!enabled_) return;     // Si no esta enabled -> Salida
+    if (!healthy_) return;      // Si no está listo o contiene errores -> Salida
 
+    // Si no ha cumplido el tiempo para nueva lectura -> Salida
     if (millis() - lastReadMs_ < readPeriodMs_)
         return;
 

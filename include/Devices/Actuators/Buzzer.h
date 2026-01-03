@@ -1,12 +1,16 @@
 #pragma once
 #include <Devices/Actuators/Actuator.h>
 
-class Buzzer : public Actuator {
+struct BuzzerConfig{
+    const char *friendlyName = "Buzzer";
+    const char *location = "room-name";
+};
+class Buzzer : public Actuator
+{
 public:
     explicit Buzzer(
         uint8_t pin,
-        const char* friendlyName = "Buzzer",
-        const char* location = "room-name"
+        const BuzzerConfig &cfg = {}
     );
 
     bool begin() override;

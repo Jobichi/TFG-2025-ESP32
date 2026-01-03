@@ -5,13 +5,18 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
+struct Ds18b20Config
+{
+    unsigned long readPeriodMs = 2000UL;
+    const char *friendlyName = "DS18B20";
+    const char *location = "room-name";
+};
+
 class Ds18b20Sensor : public Sensor {
 public:
     explicit Ds18b20Sensor(
         uint8_t pin,
-        unsigned long readPeriodMs = 2000,
-        const char* friendlyName = "DS18B20",
-        const char* location = "room-name"
+        const Ds18b20Config &cfg = {}
     );
 
     bool begin() override;

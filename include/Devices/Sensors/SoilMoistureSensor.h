@@ -3,17 +3,21 @@
 #include <ArduinoJson.h>
 #include <Devices/Sensors/Sensor.h>
 
+struct SoilMoistureConfig{
+    unsigned long readPeriodMs = 2000UL;
+    int rawDry = 3100;
+    int rawWet = 2150;
+    int thresholdPercent = 40;
+    int hysteresisPercent = 5;
+    const char *friendlyName = "SoilMoisture";
+    const char *location = "room-name";
+};
+
 class SoilMoistureSensor : public Sensor {
 public:
     explicit SoilMoistureSensor(
         uint8_t pin,
-        unsigned long readPeriodMs = 2000,
-        int rawDry = 3100,
-        int rawWet = 2150,
-        int thresholdPercent = 40,
-        int hysteresisPercent = 5,
-        const char* friendlyName = "SoilMoisture",
-        const char* location = "room-name"
+        const SoilMoistureConfig &cfg = {}
     );
 
     bool begin() override;

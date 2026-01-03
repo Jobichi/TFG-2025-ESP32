@@ -2,20 +2,15 @@
 
 PirSensor::PirSensor(
     uint8_t pin,
-    bool activeHigh,
-    bool usePulldown,
-    unsigned long warmupMs,
-    unsigned long stableMs,
-    const char* friendlyName,
-    const char* location
+    const PirConfig &cfg
 )
     : pin_(pin),
-      activeHigh_(activeHigh),
-      usePulldown_(usePulldown),
-      warmupMs_(warmupMs),
-      stableMs_(stableMs),
-      friendlyName_(friendlyName),
-      location_(location)
+      activeHigh_(cfg.activeHigh),
+      usePulldown_(cfg.usePulldown),
+      warmupMs_(cfg.warmupMs),
+      stableMs_(cfg.stableMs),
+      friendlyName_(cfg.friendlyName),
+      location_(cfg.location)
 {}
 
 bool PirSensor::begin() {

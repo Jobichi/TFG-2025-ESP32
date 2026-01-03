@@ -2,18 +2,17 @@
 
 Dht22TemperatureSensor::Dht22TemperatureSensor(
     Dht22Base &driver,
-    unsigned long readPeriodMs,
-    const char* friendlyName,
-    const char* location
+    const Dht22TemperatureConfig& cfg
 )
     : driver_(driver),
-      period_(readPeriodMs),
-      friendlyName_(friendlyName),
-      location_(location)
+      period_(cfg.readPeriodMs),
+      friendlyName_(cfg.friendlyName),
+      location_(cfg.location)
 {}
 
 bool Dht22TemperatureSensor::begin() {
     driver_.begin();
+    lastUpdate_ = millis();
     return true;
 }
 

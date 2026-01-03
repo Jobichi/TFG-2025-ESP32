@@ -2,14 +2,12 @@
 
 LdrSensor::LdrSensor(
     uint8_t pin,
-    unsigned long readPeriodMs,
-    const char* friendlyName,
-    const char* location
+    const LdrConfig &cfg
 )
     : pin_(pin),
-      readPeriodMs_(readPeriodMs),
-      friendlyName_(friendlyName),
-      location_(location)
+      readPeriodMs_(cfg.readPeriodMs),
+      friendlyName_(cfg.friendlyName),
+      location_(cfg.location)
 {}
 
 bool LdrSensor::begin() {

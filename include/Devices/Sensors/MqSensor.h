@@ -3,14 +3,18 @@
 #include <ArduinoJson.h>
 #include <Devices/Sensors/Sensor.h>
 
-class MqSensor : public Sensor {
+struct MqConfig{
+    unsigned long readPeriodMs = 1000UL;
+    float thresholdVoltage = 0.0;
+    const char *friendlyName = "MQSensor";
+    const char *location = "room-name";
+};
+class MqSensor : public Sensor
+{
 public:
     explicit MqSensor(
         uint8_t pin,
-        unsigned long readPeriodMs = 1000,
-        float thresholdVoltage = 0.0,
-        const char* friendlyName = "MQSensor",
-        const char* location = "room-name"
+        const MqConfig &cfg = {}
     );
 
     bool begin() override;

@@ -2,22 +2,16 @@
 
 SoilMoistureSensor::SoilMoistureSensor(
     uint8_t pin,
-    unsigned long readPeriodMs,
-    int rawDry,
-    int rawWet,
-    int thresholdPercent,
-    int hysteresisPercent,
-    const char* friendlyName,
-    const char* location
+    const SoilMoistureConfig &cfg
 )
     : pin_(pin),
-      readPeriodMs_(readPeriodMs),
-      rawDry_(rawDry),
-      rawWet_(rawWet),
-      thresholdPercent_(thresholdPercent),
-      hysteresisPercent_(hysteresisPercent),
-      friendlyName_(friendlyName),
-      location_(location)
+      readPeriodMs_(cfg.readPeriodMs),
+      rawDry_(cfg.rawDry),
+      rawWet_(cfg.rawWet),
+      thresholdPercent_(cfg.thresholdPercent),
+      hysteresisPercent_(cfg.hysteresisPercent),
+      friendlyName_(cfg.friendlyName),
+      location_(cfg.location)
 {}
 
 bool SoilMoistureSensor::begin() {
