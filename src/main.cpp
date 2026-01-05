@@ -1,127 +1,93 @@
-// src/main.cpp
 #include <Arduino.h>
 #include <Logic/NodeApp.h>
 
-// Si tus includes no van por NodeApp/DeviceRegistry, inclúyelos aquí también.
-// (Con la modularización que te pasé, DeviceRegistry ya incluye los headers de sensores/actuadores.)
+// MQTT Updates messages
+static constexpr uint32_t UPDATE_PERIOD_MS = 8000;
+
+// Pines 
+static constexpr uint8_t PIN_DHT      = 4;
+static constexpr uint8_t PIN_DS18B20  = 5;
+static constexpr uint8_t PIN_LDR      = 34; // ADC1
+static constexpr uint8_t PIN_MQ       = 35; // ADC1
+static constexpr uint8_t PIN_PIR      = 27;
+
+static constexpr uint8_t PIN_RELAY    = 23;
+static constexpr uint8_t PIN_BUZZER   = 13;
+static constexpr uint8_t PIN_SERVO    = 18;
+
+// IDs - Para BBDD y Publicaciones/Subscripciones
+static constexpr int SID_BMP280 = 0;
+static constexpr int SID_DHT_H  = 1;
+static constexpr int SID_DHT_T  = 2;
+static constexpr int SID_DS18   = 3;
+static constexpr int SID_LDR    = 4;
+static constexpr int SID_MQ     = 5;
+static constexpr int SID_PIR    = 6;
+
+static constexpr int AID_RELAY  = 0;
+static constexpr int AID_BUZZER = 1;
+static constexpr int AID_SERVO  = 2;
 
 NodeApp app;
 
-// -------------------------
-// Simulación de entradas (solo modo test sin HW)
-// -------------------------
-static void simulateInputs(DeviceRegistry& dev) {
-    std::map<int, Sensor*>& s = dev.sensors();
-
-    // LDR (id=3): alterna 20/80 cada ~1s
-    static uint32_t lastLdrMs = 0;
-    static bool ldrFlag = false;
-    if (millis() - lastLdrMs >= 1000) {
-        lastLdrMs = millis();
-        if (s.count(3)) {
-            LdrSensor* ldr = static_cast<LdrSensor*>(s[3]);
-            if (ldr) {
-                ldr->simulateValue(ldrFlag ? 20 : 80);
-                ldrFlag = !ldrFlag;
-            }
-        }
-    }
-
-    // MQ (id=4): alterna normal (0.5V) / humo (2.9V) cada ~6s
-    static uint32_t lastMqMs = 0;
-    static bool mqSmoke = false;
-    if (millis() - lastMqMs >= 6000) {
-        lastMqMs = millis();
-        mqSmoke = !mqSmoke;
-        if (s.count(4)) {
-            MqSensor* mq = static_cast<MqSensor*>(s[4]);
-            if (mq) {
-                mq->simulateVoltage(mqSmoke ? 2.9f : 0.5f);
-            }
-        }
-    }
-
-    // PIR (id=5): pulso realista (ON 2s cada 10s)
-    static uint32_t pirWindowStart = 0;
-    static bool pirOn = false;
-
-    if (pirWindowStart == 0) pirWindowStart = millis();
-
-    const uint32_t elapsed = millis() - pirWindowStart;
-    if (elapsed >= 10000) {
-        pirWindowStart = millis();
-    }
-
-    const bool shouldBeOn = (elapsed < 2000);
-    if (shouldBeOn != pirOn) {
-        pirOn = shouldBeOn;
-        if (s.count(5)) {
-            PirSensor* pir = static_cast<PirSensor*>(s[5]);
-            if (pir) {
-                pir->simulateState(pirOn ? 1 : 0);
-            }
-        }
-    }
-
-    // Fuego (id=0): evento raro (ON 3s cada ~30s aprox)
-    static uint32_t fireT0 = 0;
-    static bool fireOn = false;
-    if (fireT0 == 0) fireT0 = millis();
-
-    if (!fireOn && (millis() - fireT0) > 30000) {
-        fireOn = true;
-        fireT0 = millis();
-        if (s.count(0)) {
-            FireSensor* fire = static_cast<FireSensor*>(s[0]);
-            if (fire) fire->simulateState(true);
-        }
-    } else if (fireOn && (millis() - fireT0) > 3000) {
-        fireOn = false;
-        fireT0 = millis();
-        if (s.count(0)) {
-            FireSensor* fire = static_cast<FireSensor*>(s[0]);
-            if (fire) fire->simulateState(false);
-        }
-    }
-
-    // Agua (id=1): evento muy raro (ON 4s cada ~45s aprox)
-    static uint32_t waterT0 = 0;
-    static bool waterOn = false;
-    if (waterT0 == 0) waterT0 = millis();
-
-    if (!waterOn && (millis() - waterT0) > 45000) {
-        waterOn = true;
-        waterT0 = millis();
-        if (s.count(1)) {
-            WaterLeakSensor* w = static_cast<WaterLeakSensor*>(s[1]);
-            if (w) w->simulateState(true);
-        }
-    } else if (waterOn && (millis() - waterT0) > 4000) {
-        waterOn = false;
-        waterT0 = millis();
-        if (s.count(1)) {
-            WaterLeakSensor* w = static_cast<WaterLeakSensor*>(s[1]);
-            if (w) w->simulateState(false);
-        }
-    }
-
-    // Puerta (id=2): cambia cada ~12s
-    static uint32_t lastDoorMs = 0;
-    static bool doorOpen = false;
-    if (millis() - lastDoorMs >= 12000) {
-        lastDoorMs = millis();
-        doorOpen = !doorOpen;
-        if (s.count(2)) {
-            DoorSensor* d = static_cast<DoorSensor*>(s[2]);
-            if (d) d->simulateState(doorOpen ? 1 : 0);
-        }
-    }
-}
-
 void setup() {
+    delay(800);
+    Serial.begin(115200);
+    delay(200);
 
+    NodeApp::Options opt;
+    opt.announceOnBoot = true;
+    opt.periodicUpdates = true;
+    opt.updatePeriodMs = UPDATE_PERIOD_MS;
+
+    opt.waitWifi = true;   // entorno real: espera conectividad
+    opt.waitMqtt = true;
+
+    auto deviceSetup = [](DeviceRegistry& dev) {
+        // Sensores
+        dev.addBmp280(SID_BMP280, "Sensor de presión", "salon", 0x76, 2000UL);
+
+        dev.addDht22Pair(SID_DHT_T, SID_DHT_H, PIN_DHT, "salon", 2000UL, "Humedad", "Temperatura");
+        // Si en tu registry no existe addDht22 doble, entonces:
+        // dev.addDhtHumidity(SID_DHT_H, PIN_DHT, 2000UL, ...);
+        // dev.addDhtTemperature(SID_DHT_T, PIN_DHT, 2000UL, ...);
+
+        dev.addDs18b20(SID_DS18, PIN_DS18B20, "Sensor de temperatura", "salon", 2000UL);
+        dev.addLdr(SID_LDR, PIN_LDR, "Sensor de luz", "salon", 200UL);
+
+        dev.addMq(SID_MQ, PIN_MQ, "Sensor de gas", "cocina", 1000UL, 2.0f);   // thresholdV ajusta
+
+        dev.addPir(SID_PIR, PIN_PIR, "PIR", "pasillo",
+                   /*activeHigh*/true, /*usePulldown*/false, /*warmup*/60000UL, /*stable*/80UL);
+
+        // Actuadores
+        dev.addRelay(AID_RELAY, PIN_RELAY, "Luz principal", "salon", /*activeLow*/true);
+        dev.addBuzzer(AID_BUZZER, PIN_BUZZER, "Alarma", "salon");
+        dev.addServo360(AID_SERVO, PIN_SERVO, "Persianas", "salon", /*channelHint*/0);
+    };
+
+    auto alertSetup = [](AlertEngine& ae) {
+        // Ejemplos (ajusta a tu gusto)
+        ae.addBooleanChange(SID_PIR, 0.5f,
+                            "warning", "Movimiento detectado", 401,
+                            "info", "Sin movimiento", 402);
+
+        ae.addHysteresis(SID_LDR, 20.0f, 35.0f,
+                         "warning", "Ambiente oscuro", 601,
+                         "info", "Luz normal", 602);
+
+        ae.addHysteresis(SID_MQ, 1.7f, 2.1f,
+                         "warning", "Posible humo/gas (MQ)", 701,
+                         "info", "MQ normal", 702);
+    };
+
+    app.begin(deviceSetup, opt, alertSetup);
+
+    Serial.println("[BOOT] NodeApp real iniciado.");
+    Serial.flush();
 }
 
 void loop() {
-
+    app.loop();
+    delay(5);
 }
