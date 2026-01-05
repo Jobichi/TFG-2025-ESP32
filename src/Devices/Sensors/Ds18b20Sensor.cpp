@@ -19,7 +19,7 @@ bool Ds18b20Sensor::begin() {
     sensors_.requestTemperatures();
     lastT_ = sensors_.getTempCByIndex(0);
 
-    healthy_ = !isnan(lastT_);
+    healthy_ = (!isnan(lastT_) && lastT_ != DEVICE_DISCONNECTED_C);
     lastReadMs_ = millis();
 
     return healthy_;
@@ -29,13 +29,11 @@ void Ds18b20Sensor::loop() {
     if (!enabled_) return;
     if (!healthy_) return;
 
-    if (millis() - lastReadMs_ < readPeriodMs_)
-        return;
-
+    if (millis() - lastReadMs_ < readPeriodMs_) return;
     lastReadMs_ = millis();
 
     sensors_.requestTemperatures();
     lastT_ = sensors_.getTempCByIndex(0);
 
-    healthy_ = !isnan(lastT_);
+    healthy_ = (!isnan(lastT_) && lastT_ != DEVICE_DISCONNECTED_C);
 }
