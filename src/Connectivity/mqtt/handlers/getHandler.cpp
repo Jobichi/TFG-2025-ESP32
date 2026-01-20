@@ -33,17 +33,22 @@ void GetHandler::handleSensorGet(const HandlerContext &ctx) {
     JsonDocument response;
     response["value"] = ctx.sensor->getValue();
     response["units"] = ctx.sensor->getUnits();
+
+    // NUEVO: incluir estado enabled
+    response["enabled"] = ctx.sensor->isEnabled();
+
     response["requester"] = requester;
 
     publishResponse(ctx, response);
 
     if (Constants::DEBUG) {
         Serial.printf(
-            "[GetHandler] RESPONSE sensor => %s / %s (%f %s)\n",
+            "[GetHandler] RESPONSE sensor => %s / %s (%f %s, enabled=%s)\n",
             ctx.sensor->name(),
             ctx.sensor->location(),
             ctx.sensor->getValue(),
-            ctx.sensor->getUnits()
+            ctx.sensor->getUnits(),
+            ctx.sensor->isEnabled() ? "true" : "false"
         );
     }
 }

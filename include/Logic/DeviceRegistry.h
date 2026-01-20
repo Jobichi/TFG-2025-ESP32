@@ -30,6 +30,7 @@
 #include <Devices/Actuators/Buzzer.h>
 #include <Devices/Actuators/Relay.h>
 #include <Devices/Actuators/ServoMotor360.h>
+#include <Devices/Actuators/BuzzerWithFeedback.h>
 
 class DeviceRegistry {
 public:
@@ -194,6 +195,26 @@ public:
         cfg.location = location;
         return addActuator<Buzzer>(id, pin, cfg);
     }
+    
+    // BuzzerWithFeedback(uint8_t outPin, uint8_t feedbackPin, cfg)
+    BuzzerWithFeedback& addBuzzerWithFeedback(int id,
+                                            uint8_t outPin,
+                                            uint8_t feedbackPin,
+                                            const char* name,
+                                            const char* location,
+                                            bool useInternalPulldown = true,
+                                            uint32_t debounceMs = 40,
+                                            bool serialLog = true) {
+        BuzzerWithFeedbackConfig cfg;
+        cfg.friendlyName = name;
+        cfg.location = location;
+        cfg.useInternalPulldown = useInternalPulldown;
+        cfg.debounceMs = debounceMs;
+        cfg.serialLog = serialLog;
+
+        return addActuator<BuzzerWithFeedback>(id, outPin, feedbackPin, cfg);
+    }
+
 
     // Relay(uint8_t pin, bool activeLow=true, const char* name, const char* location)
     Relay& addRelay(int id, uint8_t pin, const char* name, const char* location, bool activeLow = true) {
