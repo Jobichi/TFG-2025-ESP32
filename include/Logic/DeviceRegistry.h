@@ -31,6 +31,8 @@
 #include <Devices/Actuators/Relay.h>
 #include <Devices/Actuators/ServoMotor360.h>
 #include <Devices/Actuators/BuzzerWithFeedback.h>
+#include <Devices/Actuators/ServoMotor360Endstops.h>
+
 
 class DeviceRegistry {
 public:
@@ -233,6 +235,32 @@ public:
         cfg.channelHint = channel;
         return addActuator<ServoMotor360>(id, pin, cfg);
     }
+    
+    // ServoMotor360Endstops(uint8_t servoPin, servoCfg, endCfg)
+    ServoMotor360Endstops& addServo360Endstops(int id,
+                                            uint8_t servoPin,
+                                            uint8_t pinOpen,
+                                            uint8_t pinClose,
+                                            const char* name,
+                                            const char* location,
+                                            int channel = 0,
+                                            bool activeLow = true,
+                                            uint32_t debounceMs = 30,
+                                            uint32_t maxRunMs = 15000) {
+        ServoConfig scfg;
+        scfg.friendlyName = name;
+        scfg.location = location;
+        scfg.channelHint = channel;
+
+        EndstopsConfig ecfg;
+        ecfg.pinOpen = pinOpen;
+        ecfg.pinClose = pinClose;
+        ecfg.activeLow = activeLow;
+        ecfg.debounceMs = debounceMs;
+        ecfg.maxRunMs = maxRunMs;
+
+        return addActuator<ServoMotor360Endstops>(id, servoPin, scfg, ecfg);
+    }
 
     // ---------- Acceso a mapas (compatibles con tu Dispatcher/Publishers) ----------
     std::map<int, Sensor*>& sensors() { return sensors_; }
@@ -248,3 +276,5 @@ private:
     // DHT22 drivers compartidos
     std::vector<std::unique_ptr<Dht22Base>> ownedDhtDrivers_;
 };
+
+

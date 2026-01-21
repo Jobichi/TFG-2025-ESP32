@@ -1,4 +1,6 @@
 #include <Connectivity/mqtt/publishers/UpdatePublisher.h>
+#include <Constants.h>
+#include <ArduinoJson.h>
 
 UpdatePublisher::UpdatePublisher(
     std::map<int, Sensor*> &sensors,
@@ -32,8 +34,8 @@ void UpdatePublisher::publishAll() {
 // UPDATE de sensor
 void UpdatePublisher::publishSensor(int id, Sensor *s) {
 
-    // Respeta tu arquitectura: sensores deshabilitados NO deben publicar update
-    if (!s->isEnabled())
+    // Sensores deshabilitados NO deben publicar update
+    if (!s || !s->isEnabled())
         return;
 
     String topic = "update/";
@@ -41,10 +43,11 @@ void UpdatePublisher::publishSensor(int id, Sensor *s) {
     topic += "/sensor/";
     topic += id;
 
-    StaticJsonDocument<256> doc;
+    JsonDocument doc;
     s->toUpdateJson(doc);
 
     String payload;
+    payload.reserve(256);
     serializeJson(doc, payload);
 
     mqtt_->publish(topic, payload);
@@ -58,15 +61,19 @@ void UpdatePublisher::publishSensor(int id, Sensor *s) {
 // UPDATE de actuador
 void UpdatePublisher::publishActuator(int id, Actuator *a) {
 
+    if (!a)
+        return;
+
     String topic = "update/";
     topic += Constants::Mqtt::DEVICE_ID;
     topic += "/actuator/";
     topic += id;
 
-    StaticJsonDocument<128> doc;
+    JsonDocument doc;
     a->toUpdateJson(doc);
 
     String payload;
+    payload.reserve(128);
     serializeJson(doc, payload);
 
     mqtt_->publish(topic, payload);

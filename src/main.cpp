@@ -4,18 +4,23 @@
 // MQTT Updates messages
 static constexpr uint32_t UPDATE_PERIOD_MS = 8000;
 
-// Pines 
-static constexpr uint8_t PIN_DHT      = 4; // ADC1
+// Pines
+static constexpr uint8_t PIN_DHT = 4; // ADC1
 
-static constexpr uint8_t PIN_LED   = 13;
+static constexpr uint8_t PIN_LED = 13;
 static constexpr uint8_t PIN_FEEDBACK_LED = 27;
 
-// IDs - Para BBDD y Publicaciones/Subscripciones
+// --- Servo 360 + finales de carrera (ejemplo) ---
+static constexpr uint8_t PIN_SERVO = 18;        // PWM (GPIO cualquiera válido)
+static constexpr uint8_t PIN_END_OPEN = 32;     // Pulsador fin abierto (a GND, INPUT_PULLUP)
+static constexpr uint8_t PIN_END_CLOSE = 33;    // Pulsador fin cerrado (a GND, INPUT_PULLUP)
 
-static constexpr int SID_DHT_H  = 0;
-static constexpr int SID_DHT_T  = 1;
+// IDs - Para BBDD y Publicaciones/Subscripciones
+static constexpr int SID_DHT_H = 0;
+static constexpr int SID_DHT_T = 1;
 
 static constexpr int AID_LED = 1;
+static constexpr int AID_SERVO = 2;
 
 NodeApp app;
 
@@ -29,23 +34,52 @@ void setup() {
     opt.periodicUpdates = true;
     opt.updatePeriodMs = UPDATE_PERIOD_MS;
 
-    opt.waitWifi = true;   // entorno real: espera conectividad
+    opt.waitWifi = true;
     opt.waitMqtt = true;
 
     auto deviceSetup = [](DeviceRegistry& dev) {
         // Sensores
-        dev.addDht22Pair(SID_DHT_T, SID_DHT_H, PIN_DHT, "habitación", 2000UL, "Sensor de Temperatura", "Sensor de Humedad");
-
+        dev.addDht22Pair(
+            SID_DHT_T, SID_DHT_H,
+            PIN_DHT,
+            "habitación",
+            2000UL,
+            "Sensor de Temperatura",
+            "Sensor de Humedad"
+        );
 
         // Actuadores
-        dev.addBuzzerWithFeedback(AID_LED, PIN_LED, PIN_FEEDBACK_LED, "Luz", "habitación", true, 40, true);
+        dev.addBuzzerWithFeedback(
+            AID_LED,
+            PIN_LED,
+            PIN_FEEDBACK_LED,
+            "Luz",
+            "habitación",
+            true,
+            40,
+            true
+        );
+
+        // Servo 360 con finales de carrera (simulación persiana/puerta)
+        // - activeLow=true asume INPUT_PULLUP (pulsado=LOW) en los finales
+        // - debounceMs=30 para antirrebote
+        // - maxRunMs=15000 por seguridad (timeout)
+        dev.addServo360Endstops(
+            AID_SERVO,
+            PIN_SERVO,
+            PIN_END_OPEN,
+            PIN_END_CLOSE,
+            "Persiana",
+            "habitación",
+            0,        // channelHint/timer (0..3) según tu implementación
+            true,     // activeLow
+            30,       // debounceMs
+            15000     // maxRunMs
+        );
     };
 
     auto alertSetup = [](AlertEngine& ae) {
         // Ejemplos (ajusta a tu gusto)
-        // ae.addBooleanChange(SID_PIR, 0.5f,
-        //                     "warning", "Movimiento detectado", 401,
-        //                     "info", "Sin movimiento", 402);
     };
 
     app.begin(deviceSetup, opt, alertSetup);
