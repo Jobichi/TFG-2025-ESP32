@@ -3,12 +3,11 @@
 
 Buzzer::Buzzer(
     uint8_t pin,
-    const char* friendlyName,
-    const char* location
+    const BuzzerConfig &cfg
 ) :
     pin_(pin),
-    friendlyName_(friendlyName),
-    location_(location),
+    friendlyName_(cfg.friendlyName),
+    location_(cfg.location),
     active_(false)
 {}
 

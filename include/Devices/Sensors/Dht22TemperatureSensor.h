@@ -2,13 +2,17 @@
 #include <Devices/Sensors/Sensor.h>
 #include <Devices/Sensors/Dht22Base.h>
 
+struct Dht22TemperatureConfig{
+    unsigned long readPeriodMs = 2000UL;
+    const char *friendlyName = "Temp";
+    const char *location = "room-name";
+};
+
 class Dht22TemperatureSensor : public Sensor {
 public:
     Dht22TemperatureSensor(
         Dht22Base &driver,
-        unsigned long readPeriodMs,
-        const char* friendlyName = "Temp",
-        const char* location = "room-name"
+        const Dht22TemperatureConfig &cfg = {}
     );
 
     bool begin() override;

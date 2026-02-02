@@ -4,7 +4,7 @@
 
 class Sensor {
 public:
-    virtual ~Sensor() {}
+    virtual ~Sensor() {};
 
     // Ciclo de vida
     virtual bool begin() = 0;
@@ -26,13 +26,13 @@ public:
     virtual const char* getUnits() const = 0;
 
     // MQTT UPDATE
-    virtual void toUpdateJson(JsonDocument &doc) {
+    virtual void toUpdateJson(JsonDocument &doc) const{
         doc["value"] = getValue();
         doc["units"] = getUnits();
     }
 
     // MQTT ANNOUNCE
-    virtual void toAnnounceJson(JsonDocument &doc) {
+    virtual void toAnnounceJson(JsonDocument &doc) const{
         doc["name"] = name();
         doc["location"] = location();
     }

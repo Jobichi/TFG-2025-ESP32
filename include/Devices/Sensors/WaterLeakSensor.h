@@ -3,13 +3,17 @@
 #include <ArduinoJson.h>
 #include <Devices/Sensors/Sensor.h>
 
-class WaterLeakSensor : public Sensor {
+struct WaterLeakConfig{
+    bool activeHigh = true;
+    const char *friendlyName = "WaterLeak";
+    const char *location = "room-name";
+};
+class WaterLeakSensor : public Sensor
+{
 public:
     explicit WaterLeakSensor(
         uint8_t pin,
-        bool activeHigh = true,
-        const char* friendlyName = "WaterLeak",
-        const char* location = "room-name"
+        const WaterLeakConfig &cfg = {}
     );
 
     bool begin() override;

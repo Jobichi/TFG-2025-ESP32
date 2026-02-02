@@ -2,13 +2,18 @@
 #include <Devices/Sensors/Sensor.h>
 #include <Devices/Sensors/Dht22Base.h>
 
-class Dht22HumiditySensor : public Sensor {
+struct Dht22HumidityConfig {
+    unsigned long readPeriodMs = 2000UL;
+    const char *friendlyName = "Humidity";
+    const char *location = "room-name";
+};
+
+class Dht22HumiditySensor : public Sensor
+{
 public:
     Dht22HumiditySensor(
-        Dht22Base &driver,
-        unsigned long readPeriodMs,
-        const char* friendlyName = "Humidity",
-        const char* location = "room-name"
+        Dht22Base &driver, 
+        const Dht22HumidityConfig &cfg = {}
     );
 
     bool begin() override;

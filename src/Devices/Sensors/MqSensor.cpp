@@ -2,16 +2,13 @@
 
 MqSensor::MqSensor(
     uint8_t pin,
-    unsigned long readPeriodMs,
-    float thresholdVoltage,
-    const char* friendlyName,
-    const char* location
+    const MqConfig &cfg
 )
     : pin_(pin),
-      readPeriodMs_(readPeriodMs),
-      thresholdV_(thresholdVoltage),
-      friendlyName_(friendlyName),
-      location_(location)
+      readPeriodMs_(cfg.readPeriodMs),
+      thresholdV_(cfg.thresholdVoltage),
+      friendlyName_(cfg.friendlyName),
+      location_(cfg.location)
 {}
 
 bool MqSensor::begin() {

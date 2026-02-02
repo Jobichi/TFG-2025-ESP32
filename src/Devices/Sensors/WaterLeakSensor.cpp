@@ -2,14 +2,12 @@
 
 WaterLeakSensor::WaterLeakSensor(
     uint8_t pin,
-    bool activeHigh,
-    const char* friendlyName,
-    const char* location
+    const WaterLeakConfig &cfg
 )
     : pin_(pin),
-      activeHigh_(activeHigh),
-      friendlyName_(friendlyName),
-      location_(location)
+      activeHigh_(cfg.activeHigh),
+      friendlyName_(cfg.friendlyName),
+      location_(cfg.location)
 {}
 
 bool WaterLeakSensor::begin() {

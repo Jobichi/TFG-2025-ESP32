@@ -2,14 +2,12 @@
 
 Ds18b20Sensor::Ds18b20Sensor(
     uint8_t pin,
-    unsigned long readPeriodMs,
-    const char* friendlyName,
-    const char* location
+    const Ds18b20Config &cfg
 )
     : pin_(pin),
-      readPeriodMs_(readPeriodMs),
-      friendlyName_(friendlyName),
-      location_(location),
+      readPeriodMs_(cfg.readPeriodMs),
+      friendlyName_(cfg.friendlyName),
+      location_(cfg.location),
       oneWire_(pin),
       sensors_(&oneWire_)
 {}
@@ -21,7 +19,7 @@ bool Ds18b20Sensor::begin() {
     sensors_.requestTemperatures();
     lastT_ = sensors_.getTempCByIndex(0);
 
-    healthy_ = !isnan(lastT_);
+    healthy_ = (!isnan(lastT_) && lastT_ != DEVICE_DISCONNECTED_C);
     lastReadMs_ = millis();
 
     return healthy_;
@@ -31,13 +29,11 @@ void Ds18b20Sensor::loop() {
     if (!enabled_) return;
     if (!healthy_) return;
 
-    if (millis() - lastReadMs_ < readPeriodMs_)
-        return;
-
+    if (millis() - lastReadMs_ < readPeriodMs_) return;
     lastReadMs_ = millis();
 
     sensors_.requestTemperatures();
     lastT_ = sensors_.getTempCByIndex(0);
 
-    healthy_ = !isnan(lastT_);
+    healthy_ = (!isnan(lastT_) && lastT_ != DEVICE_DISCONNECTED_C);
 }

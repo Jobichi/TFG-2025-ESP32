@@ -3,14 +3,12 @@
 
 Relay::Relay(
     uint8_t pin,
-    bool activeLow,
-    const char* friendlyName,
-    const char* location
+    const RelayConfig &cfg
 )
     : pin_(pin),
-      activeLow_(activeLow),
-      friendlyName_(friendlyName),
-      location_(location),
+      activeLow_(cfg.activeLow),
+      friendlyName_(cfg.friendlyName),
+      location_(cfg.location),
       active_(false)
 {}
 

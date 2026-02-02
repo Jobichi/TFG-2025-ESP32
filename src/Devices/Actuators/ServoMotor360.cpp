@@ -1,70 +1,70 @@
+// ======================= ServoMotor360.cpp =======================
 #include <Devices/Actuators/ServoMotor360.h>
-#include <Arduino.h>
 
 ServoMotor360::ServoMotor360(
     uint8_t pin,
-    int channel,
-    const char* friendlyName,
-    const char* location
+    const ServoConfig &cfg
 )
     : pin_(pin),
-      channel_(channel),
-      friendlyName_(friendlyName),
-      location_(location),
-      active_(false),
-      dir_(STOPPED)
-{}
+      channelHint_(cfg.channelHint),
+      friendlyName_(cfg.friendlyName),
+      location_(cfg.location) {}
 
-// Inicialización del servo continuo
 bool ServoMotor360::begin() {
-    servo_.setPeriodHertz(50);  // SG90 usa 50 Hz
+    servo_.setPeriodHertz(50);
 
-    if (!servo_.attach(pin_, SERVO_MIN_US, SERVO_MAX_US)) {
-        Serial.println("[ServoMotor360] Error attaching servo");
-        return false;
+    // Reserva un único timer (0..3) usando el hint si viene bien
+    int t = channelHint_;
+    if (t < 0) t = 0;
+    if (t > 3) t = 3;
+
+    ESP32PWM::allocateTimer(t);
+
+    if (servo_.attached()) {
+        servo_.detach();
+        delay(10);
     }
 
-    stop(); // estado seguro
-    return true;
+    attachedChannel_ = servo_.attach(pin_, SERVO_MIN_US, SERVO_MAX_US);
+    if (attachedChannel_ >= 0) {
+        servo_.writeMicroseconds(neutralUs_);
+        active_ = false;
+        dir_ = STOPPED;
+        return true;
+    }
+
+    Serial.println("[ServoMotor360] Error attaching servo (LEDC resources?)");
+    return false;
 }
 
-// Si necesitas animaciones, timers, etc., van aquí
 void ServoMotor360::loop() {
     // Vacío por defecto
 }
 
-// Movimiento hacia delante
 void ServoMotor360::forward(int speed) {
-    if (speed < 0) speed = 0;
-    if (speed > 100) speed = 100;
-
-    int pulse = map(speed, 0, 100, SERVO_STOP_US, SERVO_MAX_US);
+    speed = clampSpeed(speed);
+    const int pulse = speedToPulse(FORWARD, speed);
     servo_.writeMicroseconds(pulse);
 
-    active_ = true;
-    dir_ = FORWARD;
+    active_ = (speed > 0);
+    dir_ = active_ ? FORWARD : STOPPED;
 }
 
-// Movimiento hacia atrás
 void ServoMotor360::backward(int speed) {
-    if (speed < 0) speed = 0;
-    if (speed > 100) speed = 100;
-
-    int pulse = map(speed, 0, 100, SERVO_STOP_US, SERVO_MIN_US);
+    speed = clampSpeed(speed);
+    const int pulse = speedToPulse(BACKWARD, speed);
     servo_.writeMicroseconds(pulse);
 
-    active_ = true;
-    dir_ = BACKWARD;
+    active_ = (speed > 0);
+    dir_ = active_ ? BACKWARD : STOPPED;
 }
 
-// Detener movimiento
 void ServoMotor360::stop() {
-    servo_.writeMicroseconds(SERVO_STOP_US);
+    servo_.writeMicroseconds(neutralUs_);
     active_ = false;
     dir_ = STOPPED;
 }
 
-// Estado textual uniforme (para MQTT)
 String ServoMotor360::stateString() const {
     switch (dir_) {
         case FORWARD:  return "FORWARD";
@@ -73,27 +73,84 @@ String ServoMotor360::stateString() const {
     }
 }
 
-// Interpretación de comandos SET recibidos vía MQTT
 bool ServoMotor360::applyCommand(const char* command) {
+    if (!command || command[0] == '\0') return false;
 
-    if (strcmp(command, "FORWARD") == 0 ||
-        strcmp(command, "OPEN") == 0 ||
-        strcmp(command, "UP") == 0) {
-        forward();
+    String cmd;
+    int speed = 100;
+    if (!parseCommand(command, cmd, speed)) return false;
+
+    cmd.toUpperCase();
+
+    if (cmd == "FORWARD" || cmd == "OPEN" || cmd == "UP") {
+        forward(speed);
         return true;
     }
 
-    if (strcmp(command, "BACKWARD") == 0 ||
-        strcmp(command, "CLOSE") == 0 ||
-        strcmp(command, "DOWN") == 0) {
-        backward();
+    if (cmd == "BACKWARD" || cmd == "CLOSE" || cmd == "DOWN") {
+        backward(speed);
         return true;
     }
 
-    if (strcmp(command, "STOP") == 0) {
+    if (cmd == "STOP") {
         stop();
         return true;
     }
 
     return false;
+}
+
+int ServoMotor360::clampSpeed(int speed) {
+    return constrain(speed, 0, 100);
+}
+
+int ServoMotor360::speedToPulse(Direction d, int speed) const {
+    // Si speed es 0, nos quedamos en neutro (parado)
+    if (speed <= 0) return neutralUs_;
+
+    // Banda muerta alrededor del neutro para evitar drift
+    const int usableFwd = (SERVO_MAX_US - (neutralUs_ + deadbandUs_));
+    const int usableRev = ((neutralUs_ - deadbandUs_) - SERVO_MIN_US);
+
+    if (d == FORWARD) {
+        const int delta = (usableFwd * speed) / 100;
+        return constrain(neutralUs_ + deadbandUs_ + delta, SERVO_MIN_US, SERVO_MAX_US);
+    }
+
+    if (d == BACKWARD) {
+        const int delta = (usableRev * speed) / 100;
+        return constrain(neutralUs_ - deadbandUs_ - delta, SERVO_MIN_US, SERVO_MAX_US);
+    }
+
+    return neutralUs_;
+}
+
+bool ServoMotor360::parseCommand(const char* in, String& cmdOut, int& speedOut) {
+    // Acepta "CMD", "CMD:NN" y "CMD NN"
+    String s(in);
+    s.trim();
+    if (s.length() == 0) return false;
+
+    int sep = s.indexOf(':');
+    if (sep < 0) sep = s.indexOf(' ');
+
+    if (sep < 0) {
+        cmdOut = s;
+        speedOut = 100;
+        return true;
+    }
+
+    cmdOut = s.substring(0, sep);
+    cmdOut.trim();
+
+    String rhs = s.substring(sep + 1);
+    rhs.trim();
+
+    if (rhs.length() == 0) {
+        speedOut = 100;
+        return true;
+    }
+
+    speedOut = constrain(rhs.toInt(), 0, 100);
+    return true;
 }

@@ -1,204 +1,93 @@
 #include <Arduino.h>
-#include <Connectivity/wifi/WifiManager.h>
-#include <Connectivity/mqtt/MqttManager.h>
-#include <Connectivity/mqtt/Dispatcher.h>
+#include <Logic/NodeApp.h>
 
-#include <Connectivity/mqtt/handlers/getHandler.h>
-#include <Connectivity/mqtt/handlers/setHandler.h>
+// MQTT Updates messages
+static constexpr uint32_t UPDATE_PERIOD_MS = 8000;
 
-#include <Connectivity/mqtt/publishers/AnnouncePublisher.h>
-#include <Connectivity/mqtt/publishers/UpdatePublisher.h>
-#include <Connectivity/mqtt/publishers/AlertPublisher.h>
+// Pines 
+static constexpr uint8_t PIN_DHT      = 4;
+static constexpr uint8_t PIN_DS18B20  = 5;
+static constexpr uint8_t PIN_LDR      = 34; // ADC1
+static constexpr uint8_t PIN_MQ       = 35; // ADC1
+static constexpr uint8_t PIN_PIR      = 27;
 
-// ==== Sensores simulados ====
-#include <Devices/Sensors/FireSensor.h>
-#include <Devices/Sensors/WaterLeakSensor.h>
-#include <Devices/Sensors/DoorSensor.h>
-#include <Devices/Sensors/LdrSensor.h>
-#include <Devices/Sensors/MqSensor.h>
-#include <Devices/Sensors/PirSensor.h>
+static constexpr uint8_t PIN_RELAY    = 23;
+static constexpr uint8_t PIN_BUZZER   = 13;
+static constexpr uint8_t PIN_SERVO    = 18;
 
-// ==== Actuadores simulados ====
-#include <Devices/Actuators/Buzzer.h>
-#include <Devices/Actuators/Relay.h>
-#include <Devices/Actuators/ServoMotor360.h>
+// IDs - Para BBDD y Publicaciones/Subscripciones
+static constexpr int SID_BMP280 = 0;
+static constexpr int SID_DHT_H  = 1;
+static constexpr int SID_DHT_T  = 2;
+static constexpr int SID_DS18   = 3;
+static constexpr int SID_LDR    = 4;
+static constexpr int SID_MQ     = 5;
+static constexpr int SID_PIR    = 6;
 
-// ===============================
-//  Configuración principal
-// ===============================
+static constexpr int AID_RELAY  = 0;
+static constexpr int AID_BUZZER = 1;
+static constexpr int AID_SERVO  = 2;
 
-WifiManager wifiManager;
-MqttManager mqttManager(wifiManager);
+NodeApp app;
 
-// Diccionarios globales
-std::map<int, Sensor*> sensors;
-std::map<int, Actuator*> actuators;
-
-// Módulos MQTT
-Dispatcher* dispatcher = nullptr;
-AnnouncePublisher* announcePublisher = nullptr;
-UpdatePublisher* updatePublisher = nullptr;
-AlertPublisher* alertPublisher = nullptr;
-
-// ===============================
-//        Setup
-// ===============================
 void setup() {
+    delay(800);
     Serial.begin(115200);
-    delay(500);
+    delay(200);
 
-    Serial.println("\n=== TFG 2025 · ESP32 · MQTT Test Mode ===");
+    NodeApp::Options opt;
+    opt.announceOnBoot = true;
+    opt.periodicUpdates = true;
+    opt.updatePeriodMs = UPDATE_PERIOD_MS;
 
-    // ---- WiFi ----
-    wifiManager.begin();
+    opt.waitWifi = true;   // entorno real: espera conectividad
+    opt.waitMqtt = true;
 
-    // ---- MQTT ----
-    mqttManager.begin();
+    auto deviceSetup = [](DeviceRegistry& dev) {
+        // Sensores
+        dev.addBmp280(SID_BMP280, "Sensor de presión", "salon", 0x76, 2000UL);
 
-    // ---- Crear sensores (SIMULADOS) ----
-    sensors[0] = new FireSensor(26);         // GPIO 26
-    sensors[1] = new WaterLeakSensor(27);    // GPIO 27
-    sensors[2] = new DoorSensor(14);         // GPIO 14
-    sensors[3] = new LdrSensor(34);          // ADC 34
-    sensors[4] = new MqSensor(35);           // ADC 35
-    sensors[5] = new PirSensor(25);          // GPIO 25
+        dev.addDht22Pair(SID_DHT_T, SID_DHT_H, PIN_DHT, "salon", 2000UL, "Humedad", "Temperatura");
+        // Si en tu registry no existe addDht22 doble, entonces:
+        // dev.addDhtHumidity(SID_DHT_H, PIN_DHT, 2000UL, ...);
+        // dev.addDhtTemperature(SID_DHT_T, PIN_DHT, 2000UL, ...);
 
-    for (auto &s : sensors) {
-        s.second->begin();
-    }
+        dev.addDs18b20(SID_DS18, PIN_DS18B20, "Sensor de temperatura", "salon", 2000UL);
+        dev.addLdr(SID_LDR, PIN_LDR, "Sensor de luz", "salon", 200UL);
 
-    // ---- Crear actuadores (SIMULADOS) ----
-    actuators[0] = new Buzzer(12);                // GPIO 12
-    actuators[1] = new Relay(13);                 // GPIO 13
-    actuators[2] = new ServoMotor360(23);         // GPIO 23
+        dev.addMq(SID_MQ, PIN_MQ, "Sensor de gas", "cocina", 1000UL, 2.0f);   // thresholdV ajusta
 
-    for (auto &a : actuators)
-        a.second->begin();
+        dev.addPir(SID_PIR, PIN_PIR, "PIR", "pasillo",
+                   /*activeHigh*/true, /*usePulldown*/false, /*warmup*/60000UL, /*stable*/80UL);
 
-    // ---- Dispatcher ----
-    dispatcher = new Dispatcher(sensors, actuators, mqttManager);
+        // Actuadores
+        dev.addRelay(AID_RELAY, PIN_RELAY, "Luz principal", "salon", /*activeLow*/true);
+        dev.addBuzzer(AID_BUZZER, PIN_BUZZER, "Alarma", "salon");
+        dev.addServo360(AID_SERVO, PIN_SERVO, "Persianas", "salon", /*channelHint*/0);
+    };
 
-    // ---- Handlers ----
-    dispatcher->registerHandler("get",
-    [&](const HandlerContext &ctx){ GetHandler().handle(ctx); }
-    );
+    auto alertSetup = [](AlertEngine& ae) {
+        // Ejemplos (ajusta a tu gusto)
+        ae.addBooleanChange(SID_PIR, 0.5f,
+                            "warning", "Movimiento detectado", 401,
+                            "info", "Sin movimiento", 402);
 
-    dispatcher->registerHandler("set",
-        [&](const HandlerContext &ctx){ SetHandler().handle(ctx); }
-    );
+        ae.addHysteresis(SID_LDR, 20.0f, 35.0f,
+                         "warning", "Ambiente oscuro", 601,
+                         "info", "Luz normal", 602);
 
-    // ---- Conectar dispatcher al MQTT Manager ----
-    mqttManager.addSubHandler(
-        "get/#",
-        [&](const String &topic, const String &payload){ dispatcher->route(topic, payload); }
-    );
+        ae.addHysteresis(SID_MQ, 1.7f, 2.1f,
+                         "warning", "Posible humo/gas (MQ)", 701,
+                         "info", "MQ normal", 702);
+    };
 
-    mqttManager.addSubHandler(
-        "set/#",
-        [&](const String &topic, const String &payload){ dispatcher->route(topic, payload); }
-    );
+    app.begin(deviceSetup, opt, alertSetup);
 
-    // ---- Publishers ----
-    announcePublisher = new AnnouncePublisher(sensors, actuators, mqttManager);
-    updatePublisher   = new UpdatePublisher(sensors, actuators, mqttManager);
-    alertPublisher = new AlertPublisher(sensors, actuators, mqttManager);
-
-    // ---- Esperar a WiFi/MQTT antes de anunciar ----
-    Serial.println("[MAIN] Esperando WiFi...");
-    while (!wifiManager.isConnected()) {
-        wifiManager.loop();
-        delay(200);
-    }
-
-    Serial.println("[MAIN] Esperando MQTT...");
-    while (!mqttManager.isConnected()) {
-        mqttManager.loop();
-        delay(200);
-    }
-
-    // ---- Publicamos "announce" para ver toda la estructura MQTT ----
-    Serial.println("[MAIN] Publicando announce inicial...");
-    announcePublisher->publishAll();
-    // Activar updates solo después del announce inicial
-    updatePublisher->setEnabled(true);
+    Serial.println("[BOOT] NodeApp real iniciado.");
+    Serial.flush();
 }
 
-// ===============================
-//               Loop
-// ===============================
-
-unsigned long lastUpdate = 0;
-unsigned long lastAlert = 0;
-
 void loop() {
-    wifiManager.loop();
-    mqttManager.loop();
-
-    // ---- Publicación periódica de UPDATE ----
-    if (millis() - lastUpdate >= 8000) {   // Cada 8 segundos
-        lastUpdate = millis();
-
-        Serial.println("[MAIN] Enviando update de sensores/actuadores...");
-        updatePublisher->publishAll();
-    }
-
-    // ---- Alertas simuladas ----
-    if (millis() - lastAlert >= 15000) {   // Cada 15 segundos
-        lastAlert = millis();
-
-        Serial.println("[MAIN] Publicando alerta simulada...");
-
-        alertPublisher->publishSensorAlert(
-            0,                            // sensor ID
-            "warning",                    // nivel
-            "Alerta simulada de fuego", // mensaje
-            101                           // código
-        );
-    }
-
-    // ---- Simulación de datos en sensores ----
-    // No hay hardware conectado → forzamos valores manualmente
-
-    // LDR → alterna entre 20% y 80%
-    static bool ldrFlag = false;
-    LdrSensor* ldr = (LdrSensor*) sensors[3];
-    if (ldr) {
-        ldr->setEnabled(true); // solo por si acaso
-        if (ldrFlag) ldr->simulateValue(20);
-        else         ldr->simulateValue(80);
-        ldrFlag = !ldrFlag;
-    }
-
-    // MQ → alterna entre normal y humo
-    static bool mqFlag = false;
-    MqSensor* mq = (MqSensor*) sensors[4];
-    if (mq) {
-        if (mqFlag) mq->simulateVoltage(0.5);
-        else        mq->simulateVoltage(2.8);
-        mqFlag = !mqFlag;
-    }
-
-    // PIR → parpadeo de movimiento
-    PirSensor* pir = (PirSensor*) sensors[5];
-    if (pir) {
-        pir->simulateState(random(0, 2));  // 0 o 1
-    }
-
-    // Fuego → se activa de vez en cuando
-    FireSensor* fire = (FireSensor*) sensors[0];
-    if (fire) {
-        fire->simulateState(random(0, 10) > 7);  // 20% probabilidad
-    }
-
-    // Agua → probabilidad baja
-    WaterLeakSensor* water = (WaterLeakSensor*) sensors[1];
-    if (water) {
-        water->simulateState(random(0, 20) == 0); // 5% probabilidad
-    }
-
-    // Puerta → cambia cada X loops
-    DoorSensor* door = (DoorSensor*) sensors[2];
-    if (door) {
-        door->simulateState(random(0, 100) > 95); // 5% prob
-    }
+    app.loop();
+    delay(5);
 }

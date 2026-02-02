@@ -3,13 +3,17 @@
 #include <ArduinoJson.h>
 #include <Devices/Sensors/Sensor.h>
 
-class FireSensor : public Sensor {
+struct FireConfig{
+    bool activeHigh = false; // KY-026 suele ser active-LOW
+    const char *friendlyName = "FireSensor";
+    const char *location = "room-name";
+};
+class FireSensor : public Sensor
+{
 public:
     explicit FireSensor(
         uint8_t pin,
-        bool activeHigh = false,                // KY-026 suele ser active-LOW
-        const char* friendlyName = "FireSensor",
-        const char* location = "room-name"
+        const FireConfig &cfg = {}
     );
 
     bool begin() override;
