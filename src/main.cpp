@@ -6,12 +6,13 @@ static constexpr uint32_t UPDATE_PERIOD_MS = 8000;
 
 // Pines (AJUSTA A TU MONTAJE)
 static constexpr uint8_t PIN_MQ2 = 34;      // ADC1 recomendado (GPIO34/35/32/33...)
-static constexpr uint8_t PIN_DS18B20 = 4;   // 1-Wire
+static constexpr uint8_t PIN_DHT = 4; // ADC1
 static constexpr uint8_t PIN_BUZZER = 27;   // Salida digital
 
 // IDs - Para BBDD y Publicaciones/Subscripciones
 static constexpr int SID_MQ2 = 0;
-static constexpr int SID_DS18B20 = 1;
+static constexpr int SID_DHT_H = 1;
+static constexpr int SID_DHT_T = 2;
 
 static constexpr int AID_BUZZER = 0;
 
@@ -66,12 +67,13 @@ void setup() {
         );
 
         // Sensor DS18B20 (temperatura)
-        dev.addDs18b20(
-            SID_DS18B20,
-            PIN_DS18B20,
-            "Sensor de Temperatura",
+        dev.addDht22Pair(
+            SID_DHT_T, SID_DHT_H,
+            PIN_DHT,
             "cocina",
-            2000UL
+            2000UL,
+            "Sensor de Temperatura",
+            "Sensor de Humedad"
         );
 
         // Actuador Buzzer
