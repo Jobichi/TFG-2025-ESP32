@@ -9,7 +9,7 @@ namespace Constants {
         constexpr const char *WIFI_PASS = "20924273";
 
         // Wifi Parammeters
-        constexpr uint8_t WIFI_IP[4] = {192, 168, 1, 20};
+        constexpr uint8_t WIFI_IP[4] = {192, 168, 1, 21};
         constexpr uint8_t WIFI_GATEWAY[4] = {192, 168, 1, 1};
         constexpr uint8_t WIFI_SUBNET[4] = {255, 255, 255, 0};
     }
@@ -18,7 +18,7 @@ namespace Constants {
         // Mqtt Credentials
         constexpr const char *MQTT_USER = "admin";
         constexpr const char *MQTT_PASS = "admin1234";
-        constexpr const char *DEVICE_ID = "esp32_cocina";
+        constexpr const char *DEVICE_ID = "esp32_salon";
 
         // Mqtt Parammeters
         constexpr const char *MQTT_HOST = "192.168.1.50";
