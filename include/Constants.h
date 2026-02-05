@@ -18,10 +18,10 @@ namespace Constants {
         // Mqtt Credentials
         constexpr const char *MQTT_USER = "admin";
         constexpr const char *MQTT_PASS = "admin1234";
-        constexpr const char *DEVICE_ID = "esp32_habitacion";
+        constexpr const char *DEVICE_ID = "esp32_cocina";
 
         // Mqtt Parammeters
-        constexpr const char *MQTT_HOST = "192.168.1.143";
+        constexpr const char *MQTT_HOST = "192.168.1.50";
         constexpr uint16_t MQTT_PORT = 1883;
     }
 
