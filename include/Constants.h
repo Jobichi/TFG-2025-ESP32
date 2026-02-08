@@ -5,8 +5,8 @@ namespace Constants {
     // Wifi Glovals
     namespace Wifi {
         // Wifi Credentials
-        constexpr const char *WIFI_SSID = "R-73";
-        constexpr const char *WIFI_PASS = "20924273";
+        constexpr const char *WIFI_SSID = "TFGdemo";
+        constexpr const char *WIFI_PASS = "";
 
         // Wifi Parammeters
         constexpr uint8_t WIFI_IP[4] = {10, 12, 45, 20};
