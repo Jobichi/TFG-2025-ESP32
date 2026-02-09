@@ -19,8 +19,8 @@ static constexpr uint8_t PIN_END_CLOSE = 33;    // Pulsador fin cerrado (a GND, 
 static constexpr int SID_DHT_H = 0;
 static constexpr int SID_DHT_T = 1;
 
-static constexpr int AID_LED = 1;
-static constexpr int AID_SERVO = 2;
+static constexpr int AID_LED = 0;
+static constexpr int AID_SERVO = 1;
 
 NodeApp app;
 
@@ -49,15 +49,11 @@ void setup() {
         );
 
         // Actuadores
-        dev.addBuzzerWithFeedback(
+        dev.addBuzzer(
             AID_LED,
             PIN_LED,
-            PIN_FEEDBACK_LED,
             "Luz",
-            "salon",
-            true,
-            40,
-            true
+            "salon"
         );
 
         // Servo 360 con finales de carrera (simulación persiana/puerta)

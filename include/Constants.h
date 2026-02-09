@@ -5,11 +5,11 @@ namespace Constants {
     // Wifi Glovals
     namespace Wifi {
         // Wifi Credentials
-        constexpr const char *WIFI_SSID = "R-73";
-        constexpr const char *WIFI_PASS = "20924273";
+        constexpr const char *WIFI_SSID = "TFGdemo";
+        constexpr const char *WIFI_PASS = "";
 
         // Wifi Parammeters
-        constexpr uint8_t WIFI_IP[4] = {192, 168, 1, 21};
+        constexpr uint8_t WIFI_IP[4] = {10, 12, 45, 21};
         constexpr uint8_t WIFI_GATEWAY[4] = {192, 168, 1, 1};
         constexpr uint8_t WIFI_SUBNET[4] = {255, 255, 255, 0};
     }
@@ -21,7 +21,7 @@ namespace Constants {
         constexpr const char *DEVICE_ID = "esp32_salon";
 
         // Mqtt Parammeters
-        constexpr const char *MQTT_HOST = "192.168.1.50";
+        constexpr const char *MQTT_HOST = "10.12.45.1";
         constexpr uint16_t MQTT_PORT = 1883;
     }
 
